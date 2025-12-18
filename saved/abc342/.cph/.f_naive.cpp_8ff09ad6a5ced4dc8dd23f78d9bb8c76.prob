@@ -1,0 +1,1 @@
+{"name":"Local: f_naive","url":"/home/malb7mm/kyopro/saved/abc342/f_naive.cpp","tests":[{"id":1764824227371,"input":"3 2 2\n","output":"0.468750000000000\n"}],"interactive":false,"memoryLimit":1024,"timeLimit":3000,"srcPath":"/home/malb7mm/kyopro/saved/abc342/f_naive.cpp","group":"local","local":true}
