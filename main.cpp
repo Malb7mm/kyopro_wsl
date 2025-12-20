@@ -212,15 +212,15 @@ public:
             auto node = random.gen_ll(1, n);
             nodes.push_back(node);
         }
+        std::ranges::shuffle(nodes, random.engine);
 
         bool success = true;
         graph.clear();
         edges.clear();
         unique_edges.clear();
         uf = atcoder::dsu(n+1);
-        std::ranges::shuffle(nodes, random.engine);
 
-        for (int i = 0; i < nodes.size(); i += 2) {
+        for (int i = 0; i < 2 * m; i += 2) {
             auto u = nodes[i];
             auto v = nodes[i + 1];
 
@@ -328,6 +328,8 @@ public:
 //                         //
 // *-*-*-*-*-*-*-*-*-*-*-* //
 
+//#define int ll
+
 //#pragma GCC target("avx")
 //#pragma GCC optimize("O3")
 //#pragma GCC optimize("unroll-loops")
@@ -338,8 +340,9 @@ public:
 //#include <atcoder/scc>
 
 #define MULTI_TESTCASES false
-#define MODE 3 // -2: test(check) -1: test(naive) 0:solve 1:naive 2:check 3:next_case 4:jikken
+#define MODE -1 // -2: test(check) -1: test(naive) 0:solve 1:naive 2:check 3:next_case 4:jikken
 #define SHOW_EVERY_TESTCASES false
+#define HIDE_CERR true
 
 void solve() {
 
@@ -354,41 +357,42 @@ bool check() {
 }
 
 void next_case(CaseGenerator& cg) {
-    auto graph=cg.make_graph();
-    auto n=graph.build_tree(10);
-    cg.put(n);
-    cg.lb();
-    graph.put_edges();
+
 }
 
 void jikken() {
-
+    
 }
 
-int main() {
+signed main() {
     cerr << boolalpha << fixed << setprecision(15);
     cout << fixed << setprecision(15);
+    stringstream dummy_cerr;
+    if (LOCAL == 1 && CPHEXT == 0 && HIDE_CERR) {
+        cerr.rdbuf(dummy_cerr.rdbuf());
+    }
     if (LOCAL == 0 || CPHEXT == 1 || MODE >= 0) { 
-        int t = 1;
-        if (MULTI_TESTCASES) cin >> t;
-        rep(i, t) {
-            if (LOCAL == 0 || CPHEXT == 1 || MODE == 0) solve();
-            else if (MODE == 1) naive();
-            else if (MODE == 2) check();
-            else if (MODE == 4) jikken();
-            else if (MODE == 3) {
-                stringstream ss;
-                CaseGenerator cg(ss);
-                next_case(cg);
-                cout << ss.str();
+        
+        if (LOCAL == 0 || CPHEXT == 1 || MODE == 0) {
+            int t = 1;
+            if (MULTI_TESTCASES) cin >> t;
+            rep(i, t) {
+                solve();
             }
+        }
+        else if (MODE == 1) naive();
+        else if (MODE == 2) check();
+        else if (MODE == 4) jikken();
+        else if (MODE == 3) {
+            stringstream ss;
+            CaseGenerator cg(ss);
+            next_case(cg);
+            cout << ss.str() << endl;
         }
     }
     // random test
     else {
         string discarded_input;
-        stringstream dummy_cerr;
-        cerr.rdbuf(dummy_cerr.rdbuf());
 
         auto cin_rdbuf = cin.rdbuf();
         auto cout_rdbuf = cout.rdbuf();
