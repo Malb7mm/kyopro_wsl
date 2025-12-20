@@ -1,9 +1,11 @@
 // template reference: https://qiita.com/sorachandu/items/041169d34b9f9b99bcf7
+// solve() is around line 340
 
 #include <bits/stdc++.h>
 using namespace std;
 
 #include <atcoder/modint>
+#include <atcoder/dsu>
 using namespace atcoder;
 using mint10 = modint1000000007;
 using mint = modint998244353;
@@ -83,11 +85,6 @@ concept Container = std::ranges::range<T> && !Streamable<T>;
 template <typename T>
 concept ValStreamable = requires(std::ostream& os, T x) { os << x.val(); };
 
-template <typename T1,typename T2>
-void debug_cerr_vonly(pair<T1,T2> value, int nest) {
-    std::cerr << "[" << value.first << ", " << value.second << "]";
-}
-
 void debug_cerr_vonly(ValStreamable auto value, int nest) {
     std::cerr << value.val();
 }
@@ -96,18 +93,27 @@ void debug_cerr_vonly(Streamable auto value, int nest) {
     std::cerr << value;
 }
 
+template <typename T1,typename T2>
+void debug_cerr_vonly(pair<T1,T2> value, int nest) {
+    std::cerr << "[";
+    debug_cerr_vonly(value.first, nest);
+    std::cerr << ", ";
+    debug_cerr_vonly(value.second, nest);
+    std::cerr << "]";
+}
+
 void debug_cerr_vonly(Container auto value, int nest) {
-    std::cerr << string(nest, ' ') << "{" << endl << string(nest + 1, ' ');
+    std::cerr << std::string(nest, ' ') << "{" << endl << std::string(nest + 1, ' ');
     bool first = true;
     for (const auto& v : value) {
         if (!first) std::cerr << ", ";
         debug_cerr_vonly(v, nest + 1);
         first = false;
     }
-    std::cerr << endl << string(nest, ' ') << "}";
+    std::cerr << endl << std::string(nest, ' ') << "}";
 }
 
-void debug_cerr(string name, auto value) {
+void debug_cerr(std::string name, auto value) {
     std::cerr << "# " << name << " = ";
     debug_cerr_vonly(value, 0);
     std::cerr << endl;
@@ -115,18 +121,18 @@ void debug_cerr(string name, auto value) {
 
 class Random {
 public:
-    mt19937_64 rnd;
+    std::mt19937_64 engine;
 
     Random() {
-        random_device seed_gen;
-        rnd.seed(seed_gen());
+        std::random_device seed_gen;
+        engine.seed(seed_gen());
     }
-    ll gen_ll(ll min, ll max) {
-        uniform_int_distribution<ll> dist(min, max);
-        return dist(rnd);
+    long long gen_ll(long long min, long long max) {
+        std::uniform_int_distribution<long long> dist(min, max);
+        return dist(engine);
     }
-    string gen_str(string chars, int length) {
-        ostringstream oss;
+    std::string gen_str(std::string chars, int length) {
+        std::ostringstream oss;
         int arrlen = chars.length();
         for (int i = 0; i < length; i++) {
             oss << chars[gen_ll(0, arrlen - 1)];
@@ -135,42 +141,181 @@ public:
     }
 };
 
-class CaseGenerator {
-private:
-    stringstream& ss;
-public:
+class GraphGenerator {
     Random random;
+    std::stringstream& ss;
+public:
+    std::map<long long, std::vector<long long>> graph;
+    std::set<std::pair<long long, long long>> edges;
+    std::set<std::pair<long long, long long>> unique_edges;
+    atcoder::dsu uf;
+    //デフォルトは単純無向グラフ
+    bool loop = false;
+    bool multigraph = false;
+    bool directed = false;
+    bool cycle = true;
 
-    CaseGenerator(stringstream& ss_in): ss(ss_in) {}
+    GraphGenerator(std::stringstream& ss_in): ss(ss_in) {}
+
+    long long build_tree(long long n_min, long long n_max) {
+        assert(n_min >= 2);
+        assert(n_max >= 2);
+        assert(n_max >= n_min);
+
+        auto loop = false, multigraph = false, directed = false, cycle = false;
+        std::swap(this->loop, loop);
+        std::swap(this->multigraph, multigraph);
+        std::swap(this->directed, directed);
+        std::swap(this->cycle, cycle);
+
+        long long n, m;
+        do {
+            n = random.gen_ll(n_min, n_max);
+            m = n - 1;
+        } while (!try_build(n, m));
+
+        std::swap(this->loop, loop);
+        std::swap(this->multigraph, multigraph);
+        std::swap(this->directed, directed);
+        std::swap(this->cycle, cycle);
+        return n;
+    }
+
+    long long build_tree(long long n_max) {
+        return build_tree(2, n_max);
+    }
+
+    pair<long long, long long> build(long long n_min, long long n_max, long long m_min, long long m_max) {
+        assert(n_min >= 2);
+        assert(n_max >= 2);
+        assert(n_max >= n_min);
+        assert(m_min >= 1);
+        assert(m_max >= 1);
+        assert(m_max >= m_min);
+
+        long long n, m;
+        do {
+            n = random.gen_ll(n_min, n_max);
+            m = random.gen_ll(m_min, m_max);
+        } while (!try_build(n, m));
+        return {n, m};
+    }
+
+    pair<long long, long long> build(long long n_max, long long m_max) {
+        return build(2, n_max, 1, m_max);
+    }
+
+    bool try_build(long long n, long long m) {
+        std::vector<long long> nodes(n);
+        std::iota(nodes.begin(), nodes.end(), 1);
+        for (int i = n; i < 2 * m; i++) {
+            auto node = random.gen_ll(1, n);
+            nodes.push_back(node);
+        }
+
+        bool success = true;
+        graph.clear();
+        edges.clear();
+        unique_edges.clear();
+        uf = atcoder::dsu(n+1);
+        std::ranges::shuffle(nodes, random.engine);
+
+        for (int i = 0; i < nodes.size(); i += 2) {
+            auto u = nodes[i];
+            auto v = nodes[i + 1];
+
+            if (!loop && u == v) { success = false; break; }
+            if (!multigraph && edges.contains({u, v})) { success = false; break; }
+            if (!cycle && !directed && uf.same(u, v)) { success = false; break; }
+
+            graph[u].push_back(v);
+            edges.insert({u, v});
+            unique_edges.insert({u, v});
+            if (!directed) {
+                graph[v].push_back(u);
+                edges.insert({v, u});
+            }
+            uf.merge(u, v);
+        }
+        if (!success) return false;
+
+        if (!cycle && directed) {
+            set<ll> seen, finished;
+
+            function<bool(int)> dfs = [&](int u){
+                seen.insert(u);
+                for (auto v : graph[u]) {
+                    if (finished.contains(v)) continue;
+                    if (seen.contains(v) && !finished.contains(v)) return true;
+                    if (dfs(v)) return true;
+                }
+                finished.insert(u);
+                return false;
+            };
+
+            for (int i = 1; i <= n; i++) {
+                if (!finished.contains(i) && dfs(i)) { success = false; break; }
+            }
+        }
+        return success;
+    }
+
+    void put_edges(function<void()> after = NULL) {
+        auto itr = unique_edges.begin();
+
+        while (itr != unique_edges.end()) {
+            if (itr != unique_edges.begin()) ss << endl;
+            auto [u, v] = *itr;
+
+            ss << u << " " << v << " ";
+            if (after != NULL) after();
+            itr++;
+        }
+    }
+};
+
+class CaseGenerator {
+    Random random;
+    std::stringstream& ss;
+public:
+
+    CaseGenerator(std::stringstream& ss_in): ss(ss_in) {}
 
     void lb() {
-        ss << "\n";
+        ss << endl;
     }
-    ll put_ll(ll min, ll max) {
+    template <typename T>
+    void put(T value) {
+        ss << value << " ";
+    }
+    long long put_ll(long long min, long long max) {
         auto value = random.gen_ll(min, max);
         ss << value << " ";
         return value;
     }
-    ll put_ll(ll min, ll max, function<bool(ll)> check) {
-        ll value;
+    long long put_ll(long long min, long long max, function<bool(long long)> check) {
+        long long value;
         do {
             value = random.gen_ll(min, max);
-        } while(!check(value));
+        } while (!check(value));
         ss << value << " ";
         return value;
     }
-    string put_str(string chars, int length) {
+    std::string put_str(std::string chars, int length) {
         auto value = random.gen_str(chars, length);
         ss << value << " ";
         return value;
     }
-    string put_str(string chars, int length, function<bool(string)> check) {
-        string value;
+    std::string put_str(std::string chars, int length, function<bool(std::string)> check) {
+        std::string value;
         do {
             value = random.gen_str(chars, length);
-        } while(!check(value));
+        } while (!check(value));
         ss << value << " ";
         return value;
+    }
+    GraphGenerator make_graph() {
+        return GraphGenerator(ss);
     }
 };
 
@@ -187,72 +332,21 @@ public:
 //#pragma GCC optimize("O3")
 //#pragma GCC optimize("unroll-loops")
 
-//#include <atcoder/dsu>
 //#include <atcoder/segtree>
 //#include <atcoder/lazysegtree>
 //#include <atcoder/string>
 //#include <atcoder/scc>
 
-using mintx=static_modint<10007>;
-ll set1_bit(ll val, int bit) {
-    return val|=(1<<bit);
-}
-ll set0_bit(ll val, int bit) {
-    return val&=~(1<<bit);
-}
-ll flip_bit(ll val, int bit) {
-    return val^=(1<<bit);
-}
-bool ispop_bit(ll val, int bit) {
-    return val&(1<<bit);
-}
-
 #define MULTI_TESTCASES false
-#define MODE -1 // -2: test(check) -1: test(naive) 0:solve 1:naive 2:check
+#define MODE 3 // -2: test(check) -1: test(naive) 0:solve 1:naive 2:check 3:next_case 4:jikken
 #define SHOW_EVERY_TESTCASES false
 
 void solve() {
-    int cin(n);
-    string cin(s);
-    vector<int> J,O,I;
-    {
-        int jcnt=0,ocnt=0,icnt=0;
-        rep(i,n){
-            if(s[i]=='J')jcnt++;
-            if(s[i]=='O')ocnt++;
-            if(s[i]=='I')icnt++;
-            J.push_back(jcnt);
-            O.push_back(ocnt);
-            I.push_back(icnt);
-        }
-    }
-    int ans=0;
-    map<tuple<int,int,int>,int> map;
-    map[{0,0,0}]=-1;
-    rep(i,n){
-        int mincnt=min({J[i],O[i],I[i]});
-        tuple<int,int,int> key={J[i]-mincnt,O[i]-mincnt,I[i]-mincnt};
-        if(map.contains(key))chmax(ans,i-map[key]);
-        else map[key]=i;
-    }
-    cout<<ans<<endl;
+
 }
 
 void naive() {
-    int cin(n);
-    string cin(s);
-    int ans=0;
-    rep(l,n)rep(r,l,n){
-        if((r-l+1)%3!=0)continue;
-        map<char,int> cnts;
-        rep(i,l,r+1){
-            cnts[s[i]]++;
-        }
-        if(cnts['J']==cnts['O']&&cnts['I']==cnts['O']){
-            chmax(ans,r-l+1);
-        }
-    }
-    cout<<ans<<endl;
+
 }
 
 bool check() {
@@ -260,9 +354,15 @@ bool check() {
 }
 
 void next_case(CaseGenerator& cg) {
-    auto n=cg.put_ll(1,100);
+    auto graph=cg.make_graph();
+    auto n=graph.build_tree(10);
+    cg.put(n);
     cg.lb();
-    cg.put_str("JOI",n);
+    graph.put_edges();
+}
+
+void jikken() {
+
 }
 
 int main() {
@@ -275,6 +375,13 @@ int main() {
             if (LOCAL == 0 || CPHEXT == 1 || MODE == 0) solve();
             else if (MODE == 1) naive();
             else if (MODE == 2) check();
+            else if (MODE == 4) jikken();
+            else if (MODE == 3) {
+                stringstream ss;
+                CaseGenerator cg(ss);
+                next_case(cg);
+                cout << ss.str();
+            }
         }
     }
     // random test
@@ -412,5 +519,3 @@ int main() {
         }
     }
 }
-
-// solve() is around line 180
