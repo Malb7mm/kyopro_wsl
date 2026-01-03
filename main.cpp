@@ -1,18 +1,30 @@
 // template reference: https://qiita.com/sorachandu/items/041169d34b9f9b99bcf7
-// solve() is around line 340
+// solve() is around line 480
+
+//for library checker
+//#define ATCODER 1
 
 #include <bits/stdc++.h>
 using namespace std;
 
-#include <atcoder/modint>
+#ifdef ATCODER
 #include <atcoder/dsu>
+#include <atcoder/segtree>
+#include <atcoder/lazysegtree>
+#include <atcoder/convolution>
+#include <atcoder/math>
+#include <atcoder/modint>
+#include <atcoder/string>
+#include <atcoder/scc>
 using namespace atcoder;
 using mint10 = modint1000000007;
 using mint = modint998244353;
+#endif
 
 using ll = long long;
 using ull = unsigned long long;
 #define INF (1 << 30)
+#define INFL (1LL << 48)
 #define INFLL (1LL << 60)
 
 #define walk2(dr, dc) for (auto [dr, dc] : vector<pair<int, int>>{{1, 0}, {0, 1}, {-1, 0}, {0, -1}})
@@ -28,15 +40,21 @@ using ull = unsigned long long;
 #define reprev3(i, x, n) for (ll i = (ll)(n)-1; i >= (ll)(x); i--)
 #define reprev_selector(_1, _2, _3, NAME, ...) NAME
 #define reprev(...) reprev_selector(__VA_ARGS__, reprev3, reprev2)(__VA_ARGS__)
+#define repsubset(i, s) for (ll i = (ll)(s); i >= 0; i--, i &= (i >= 0 ? s : i))
 #define all(x) x.begin(), x.end()
 #define rall(x) x.rbegin(), x.rend()
-#define ansYN(x) cout << (x ? "Yes" : "No") << endl
+#define ansYn(x) cout << (x ? "Yes" : "No") << endl
+#define ansYN(x) cout << (x ? "YES" : "NO") << endl
 #define cin1(a) a; cin >> a
 #define cin2(a, b) a, b; cin >> a >> b
 #define cin3(a, b, c) a, b, c; cin >> a >> b >> c
 #define cin4(a, b, c, d) a, b, c, d; cin >> a >> b >> c >> d
-#define cin_selector(_1, _2, _3, _4, NAME, ...) NAME
-#define cin(...) cin_selector(__VA_ARGS__, cin4, cin3, cin2, cin1)(__VA_ARGS__)
+#define cin5(a, b, c, d, e) a, b, c, d, e; cin >> a >> b >> c >> d >> e
+#define cin6(a, b, c, d, e, f) a, b, c, d, e, f; cin >> a >> b >> c >> d >> e >> f
+#define cin7(a, b, c, d, e, f, g) a, b, c, d, e, f, g; cin >> a >> b >> c >> d >> e >> f >> g
+#define cin8(a, b, c, d, e, f, g, h) a, b, c, d, e, f, g, h; cin >> a >> b >> c >> d >> e >> f >> g >> h
+#define cin_selector(_1, _2, _3, _4, _5, _6, _7, _8, NAME, ...) NAME
+#define cin(...) cin_selector(__VA_ARGS__, cin8, cin7, cin6, cin5, cin4, cin3, cin2, cin1)(__VA_ARGS__)
 #define vec3(T, w1, init) vector<T>(w1, init)
 #define vec4(T, w1, w2, init) vector<vector<T>>(w1, vec3(T, w2, init))
 #define vec5(T, w1, w2, w3, init) vector<vector<vector<T>>>(w1, vec4(T, w2, w3, init))
@@ -53,10 +71,14 @@ using ull = unsigned long long;
 #define debug2(name, x) debug_cerr(name, x)
 #define debug_selector(_1, _2, NAME, ...) NAME
 #define debug(...) debug_selector(__VA_ARGS__, debug2, debug1)(__VA_ARGS__)
+#define debugs(...) debug_cerr(#__VA_ARGS__, make_tuple(__VA_ARGS__))
+#define debugsn(name, ...) debug_cerr(name, make_tuple(__VA_ARGS__))
 #define dmsg(x) cerr << "- " << x << endl;
 #define local if constexpr (false) {} else
 #else
 #define debug(...) ;
+#define debugs(...) ;
+#define debugsn(...) ;
 #define dmsg(x) ;
 #define local if constexpr (true) {} else 
 #define LOCAL 0
@@ -65,15 +87,81 @@ using ull = unsigned long long;
 #define CPHEXT 0
 #endif
 
-template<typename T1, typename T2> inline bool chmax(T1 &a, T2 b) {
-    bool compare = a < b;
-    if(compare) a = b;
-    return compare;
+template<typename T, typename... Args> 
+inline bool chmax(T &ref, Args&&... args) {
+    auto old = ref;
+    ref = std::max({ref, (T)args...});
+    return old != ref;
 }
-template<typename T1, typename T2> inline bool chmin(T1 &a, T2 b) {
-    bool compare = a > b;
-    if(compare) a = b;
-    return compare;
+template<typename T, typename... Args> 
+inline bool chmin(T &ref, Args&&... args) {
+    auto old = ref;
+    ref = std::min({ref, (T)args...});
+    return old != ref;
+}
+
+template<typename T, typename... Args>
+inline T set1(T &val, Args&&... bits) {
+    return (val | ... | (1LL<<bits));
+}
+template<typename T, typename... Args>
+inline T set0(T &val, Args&&... bits) {
+    return (val & ... & ~(1LL<<bits));
+}
+template<typename T, typename... Args>
+inline T flip(T &val, Args&&... bits) {
+    return (val ^ ... ^ (1LL<<bits));
+}
+template<typename T, typename... Args>
+inline bool isset(T &val, Args&&... bits) {
+    return (... && (bool)(val & (1LL<<bits)));
+}
+template<typename T, typename... Args>
+inline bool isset_any(T &val, Args&&... bits) {
+    return (... || (bool)(val & (1LL<<bits)));
+}
+template<typename T, typename... Args>
+inline bool isnset(T &val, Args&&... bits) {
+    return (... && !(bool)(val & (1LL<<bits)));
+}
+template<typename T, typename... Args>
+inline bool isnset_any(T &val, Args&&... bits) {
+    return (... || !(bool)(val & (1LL<<bits)));
+}
+
+template <int... Is>
+struct CustomComp {
+    template <typename T>
+    bool operator()(const T& lhs, const T& rhs) const {
+        bool result = false;
+        bool found = false;
+        ((
+            [&]() {
+                if (found) return;
+                constexpr int idx = (Is > 0 ? Is : -Is) - 1;
+                auto&& val_l = std::get<idx>(lhs);
+                auto&& val_r = std::get<idx>(rhs);
+                if (Is > 0) {
+                    if (val_l < val_r) { result = true; found = true; }
+                    else if (val_r < val_l) { result = false; found = true; }
+                } else {
+                    if (val_r < val_l) { result = true; found = true; }
+                    else if (val_l < val_r) { result = false; found = true; }
+                }
+            }()
+        ), ...);
+        return result;
+    }
+};
+template <int... Is>
+constexpr CustomComp<Is...> comp;
+
+void multicases(function<void()> f) {
+    int T;
+    cin >> T;
+    for (int t = 0; t < T; t++) {
+        f();
+    }
 }
 
 template <typename T>
@@ -85,32 +173,78 @@ concept Container = std::ranges::range<T> && !Streamable<T>;
 template <typename T>
 concept ValStreamable = requires(std::ostream& os, T x) { os << x.val(); };
 
-void debug_cerr_vonly(ValStreamable auto value, int nest) {
-    std::cerr << value.val();
-}
+#ifdef ATCODER
+template <typename T> struct is_acl_segtree : std::false_type {};
+template <class S, auto op, auto e>
+struct is_acl_segtree<atcoder::segtree<S, op, e>> : std::true_type {};
 
-void debug_cerr_vonly(Streamable auto value, int nest) {
-    std::cerr << value;
-}
+template <typename T> struct is_acl_lazy_segtree : std::false_type {};
+template <class S, auto op, auto e, class F, auto m, auto c, auto id>
+struct is_acl_lazy_segtree<atcoder::lazy_segtree<S, op, e, F, m, c, id>> : std::true_type {};
+#endif
 
-template <typename T1,typename T2>
-void debug_cerr_vonly(pair<T1,T2> value, int nest) {
-    std::cerr << "[";
-    debug_cerr_vonly(value.first, nest);
-    std::cerr << ", ";
-    debug_cerr_vonly(value.second, nest);
-    std::cerr << "]";
-}
-
-void debug_cerr_vonly(Container auto value, int nest) {
-    std::cerr << std::string(nest, ' ') << "{" << endl << std::string(nest + 1, ' ');
-    bool first = true;
-    for (const auto& v : value) {
-        if (!first) std::cerr << ", ";
-        debug_cerr_vonly(v, nest + 1);
-        first = false;
+struct DebugImpl {
+    template <typename T>
+    static void run(const T& value, int nest) {
+        if constexpr (ValStreamable<T>) {
+            run(value.val(), nest);
+        }
+        else if constexpr (Streamable<T>) {
+            if constexpr (std::is_integral_v<T>) {
+                if      (value >=  INFL)  std::cerr << "INF";
+                else if (value <= -INFL)  std::cerr << "-INF";
+                else if (value ==  INF)   std::cerr << "inf";
+                else if (value == -INF)   std::cerr << "-inf";
+                else std::cerr << value;
+            }
+            else std::cerr << value;
+        }
+        else if constexpr (Container<T>) {
+            std::cerr << std::string(nest, ' ') << "{" << endl << std::string(nest + 1, ' ');
+            bool first = true;
+            for (const auto& v : value) {
+                if (!first) std::cerr << ", ";
+                run(v, nest + 1);
+                first = false;
+            }
+            std::cerr << endl << std::string(nest, ' ') << "}";
+        }
+#ifdef ATCODER
+        else if constexpr (is_acl_segtree<T>::value || is_acl_lazy_segtree<T>::value) {
+            auto& nc_value = const_cast<T&>(value);
+            int n = nc_value.max_right(0, [](auto){ return true; });
+            
+            std::cerr << std::string(nest, ' ') << "{";
+            for (int i = 0; i < n; i++) {
+                if (i > 0) std::cerr << ", ";
+                run(nc_value.get(i), nest + 1);
+            }
+            std::cerr << "}";
+        }
+#endif
+        else {
+            handle_tuple_or_pair(value, nest);
+        }
     }
-    std::cerr << endl << std::string(nest, ' ') << "}";
+
+    template <typename T>
+    static void handle_tuple_or_pair(const T& value, int nest) {
+        if constexpr (requires { typename tuple_size<T>::type; } && !Container<T>) {
+             std::cerr << "[";
+             std::apply([&](const auto&... args) {
+                 size_t n = 0;
+                 ((std::cerr << (n++ == 0 ? "" : ", "), run(args, nest)), ...);
+             }, value);
+             std::cerr << "]";
+        }
+        else {
+            std::cerr << "?";
+        }
+    }
+};
+
+void debug_cerr_vonly(auto const& value, int nest) {
+    DebugImpl::run(value, nest);
 }
 
 void debug_cerr(std::string name, auto value) {
@@ -141,6 +275,7 @@ public:
     }
 };
 
+#ifdef ATCODER
 class GraphGenerator {
     Random random;
     std::stringstream& ss;
@@ -273,11 +408,12 @@ public:
         }
     }
 };
+#endif
 
 class CaseGenerator {
-    Random random;
     std::stringstream& ss;
 public:
+    Random random;
 
     CaseGenerator(std::stringstream& ss_in): ss(ss_in) {}
 
@@ -314,9 +450,11 @@ public:
         ss << value << " ";
         return value;
     }
+#ifdef ATCODER
     GraphGenerator make_graph() {
         return GraphGenerator(ss);
     }
+#endif
 };
 
 // *-*-*-*-*-*-*-*-*-*-*-* //
@@ -328,21 +466,187 @@ public:
 //                         //
 // *-*-*-*-*-*-*-*-*-*-*-* //
 
+struct Rooted {
+private:
+    std::size_t size_;
+    std::vector<int> depth_;
+    std::vector<long long> dist_;
+    std::vector<std::vector<int>> parent_;
+    std::vector<std::vector<int>> childs_;
+    std::size_t doubling_depth_;
+    std::vector<int> subtree_size_;
+    std::vector<int> in_, out_, in2x_, out2x_;
+
+    void init_vectors(int root) {
+        assert(0 <= root);
+        assert(root < size_);
+        depth_.assign(size_, 0);
+        dist_.assign(size_, 0);
+        subtree_size_.assign(size_, 0);
+        in_.assign(size_, 0);
+        out_.assign(size_, 0);
+        in2x_.assign(size_, 0);
+        out2x_.assign(size_, 0);
+        childs_.assign(size_, {});
+        doubling_depth_ = 1;
+        while ((1 << doubling_depth_) < size_) doubling_depth_++;
+        parent_ = std::vector<std::vector<int>>(doubling_depth_, std::vector<int>(size_, root));
+    }
+    
+    void build_doubling() {
+        for (int k = 1; k < doubling_depth_; k++) {
+            for (int i = 0; i < size_; i++) {
+                parent_[k][i] = parent_[k - 1][parent_[k - 1][i]];
+            }
+        }
+    }
+
+public:
+    struct EulerTourRange {
+        int l;
+        int r;
+    };
+
+    // `G`は 0-indexed の木
+    explicit Rooted(const std::vector<std::vector<int>>& G, int root)
+        : size_(G.size()) {
+        init_vectors(root);
+        int timer = 0, timer2x = 0;
+        function<int(int, int, int, long long)> dfs = [&](int u, int from, int distance, long long w_distance) {
+            depth_[u] = distance;
+            dist_[u] = w_distance;
+            parent_[0][u] = from;
+            in_[u] = timer++;
+            in2x_[u] = timer2x++;
+            int subtree_size = 1;
+            for (const auto& v : G[u]) {
+                if (v == from) continue;
+                subtree_size += dfs(v, u, distance + 1, w_distance + 1);
+                childs_[u].push_back(v);
+            }
+            subtree_size_[u] = subtree_size;
+            out_[u] = timer;
+            out2x_[u] = timer++;
+            return subtree_size;
+        };
+        dfs(root, root, 0, 0);
+        build_doubling();
+    }
+
+    // `G`は 0-indexed の重み付き木
+    explicit Rooted(const std::vector<std::vector<pair<int, long long>>>& G, int root)
+        : size_(G.size()) {
+        init_vectors(root);
+        int timer = 0, timer2x = 0;
+        function<int(int, int, int, long long)> dfs = [&](int u, int from, int distance, long long w_distance) {
+            depth_[u] = distance;
+            dist_[u] = w_distance;
+            parent_[0][u] = from;
+            in_[u] = timer++;
+            in2x_[u] = timer2x++;
+            int subtree_size = 1;
+            for (const auto& [v, w] : G[u]) {
+                if (v == from) continue;
+                subtree_size += dfs(v, u, distance + 1, w_distance + w);
+                childs_[u].push_back(v);
+            }
+            subtree_size_[u] = subtree_size;
+            out_[u] = timer;
+            out2x_[u] = timer++;
+            return subtree_size;
+        };
+        dfs(root, root, 0, 0);
+        build_doubling();
+    }
+
+    int forward(int u, long long count) {
+        int current = u;
+        for (int k = 0; k < doubling_depth_; k++) {
+            if (!((count >> k) & 1)) continue;
+            current = parent_[k][current];
+        }
+        return current;
+    }
+
+    int lca(int u, int v) {
+        if (depth_[u] < depth_[v]) swap(u, v);
+        u = forward(u, depth_[u] - depth_[v]);
+        if (u == v) return u;
+
+        for (int k = doubling_depth_ - 1; k >= 0; k--) {
+            if (parent_[k][u] != parent_[k][v]) {
+                u = parent_[k][u];
+                v = parent_[k][v];
+            }
+        }
+        return parent_[0][u];
+    }
+
+    long long dist(int u, int v) {
+        return dist_[u] + dist_[v] - 2 * dist_[lca(u, v)];
+    }
+
+    int size(int u) {
+        return size_;
+    }
+
+    int subtree_size(int u) {
+        return subtree_size_[u];
+    }
+
+    bool is_on_path(int u, int v, int a) {
+        return dist(u, v) == dist(u, a) + dist(a, v);
+    }
+
+    bool is_ancestor(int u, int may_ancestor) {
+        return in_[may_ancestor] <= in_[u] && out_[u] <= out_[may_ancestor];
+    }
+
+    EulerTourRange tour_range(int u) {
+        return {in_[u], out_[u]};
+    }
+
+    EulerTourRange tour_range2x(int u) {
+        return {in2x_[u], out2x_[u]};
+    }
+
+    long long count_superpaths(int u, int v) {
+        if (u == v) return count_superpaths(u);
+        auto lca_uv = lca(u, v);
+        if (lca_uv == v) swap(u, v);
+        if (lca_uv == u) {
+            int diff = depth_[v] - depth_[u];
+            int w = forward(v, diff - 1);
+            long long p_size = size_ - subtree_size_[w];
+            return (long long)p_size * subtree_size_[v];
+        }
+        else {
+            return (long long)subtree_size_[u] * subtree_size_[v];
+        }
+    }
+
+    // [u,u] を含む
+    long long count_superpaths(int u) {
+        long long ans = (long long)size_ * (size_ - 1) / 2;
+        long long p_size = size_ - subtree_size_[u];
+        ans -= p_size * (p_size - 1) / 2;
+        for (const auto& v : childs_[u]) {
+            long long v_size = subtree_size_[v];
+            ans -= v_size * (v_size - 1) / 2;
+        }
+        return ans + 1;
+    }
+};
+
 //#define int ll
 
 //#pragma GCC target("avx")
 //#pragma GCC optimize("O3")
 //#pragma GCC optimize("unroll-loops")
 
-//#include <atcoder/segtree>
-//#include <atcoder/lazysegtree>
-//#include <atcoder/string>
-//#include <atcoder/scc>
-
-#define MULTI_TESTCASES false
-#define MODE -1 // -2: test(check) -1: test(naive) 0:solve 1:naive 2:check 3:next_case 4:jikken
+#define MODE 1 // -2: test(check) -1: test(naive) 0:solve 1:naive 2:check 3:next_case 4:jikken
 #define SHOW_EVERY_TESTCASES false
-#define HIDE_CERR true
+#define HIDE_CERR false
 
 void solve() {
 
@@ -361,165 +665,13 @@ void next_case(CaseGenerator& cg) {
 }
 
 void jikken() {
-    
+
 }
 
 signed main() {
-    cerr << boolalpha << fixed << setprecision(15);
+    ios::sync_with_stdio(false);
+    std::cin.tie(nullptr);
+    cerr << boolalpha << fixed << setprecision(3);
     cout << fixed << setprecision(15);
-    stringstream dummy_cerr;
-    if (LOCAL == 1 && CPHEXT == 0 && HIDE_CERR) {
-        cerr.rdbuf(dummy_cerr.rdbuf());
-    }
-    if (LOCAL == 0 || CPHEXT == 1 || MODE >= 0) { 
-        
-        if (LOCAL == 0 || CPHEXT == 1 || MODE == 0) {
-            int t = 1;
-            if (MULTI_TESTCASES) cin >> t;
-            rep(i, t) {
-                solve();
-            }
-        }
-        else if (MODE == 1) naive();
-        else if (MODE == 2) check();
-        else if (MODE == 4) jikken();
-        else if (MODE == 3) {
-            stringstream ss;
-            CaseGenerator cg(ss);
-            next_case(cg);
-            cout << ss.str() << endl;
-        }
-    }
-    // random test
-    else {
-        string discarded_input;
-
-        auto cin_rdbuf = cin.rdbuf();
-        auto cout_rdbuf = cout.rdbuf();
-        istream std_in(cin_rdbuf);
-        ostream std_out(cout_rdbuf);
-        stringstream ss_in;
-        stringstream ss_out;
-        cin.rdbuf(ss_in.rdbuf());
-        cout.rdbuf(ss_out.rdbuf());
-
-        stringstream ss_gen;
-        CaseGenerator cg(ss_gen);
-
-        auto clear_ss = [&](stringstream& ss){
-            ss.str("");
-            ss.clear(std::stringstream::goodbit);
-        };
-
-        auto read_ss = [&](stringstream& ss){
-            auto result = ss.str();
-            clear_ss(ss);
-            return result;
-        };
-
-        auto generate = [&]{
-            next_case(cg);
-            ss_gen << endl;
-            return read_ss(ss_gen);
-        };
-
-        std_out << "- Example of Generated Case:" << endl;
-        std_out << generate() << endl;
-
-        stringstream ans_solve_ss;
-        string ans_solve;
-
-        int i_target = 1;
-        for (int i = 1;; i++) {
-            auto testcase = generate();
-            if (SHOW_EVERY_TESTCASES) {
-                std_out << "- Case " << i << ":" << endl;
-                std_out << generate() << endl;
-            }
-
-            ss_in << testcase;
-            solve();
-            ans_solve_ss << read_ss(ss_out);
-            ans_solve = ans_solve_ss.str();
-            clear_ss(ss_in);
-
-            if (MODE == -1){
-                stringstream ans_naive_ss;
-                string ans_naive;
-
-                ss_in << testcase;
-                naive();
-                ans_naive_ss << read_ss(ss_out);
-                ans_naive = ans_naive_ss.str();
-                clear_ss(ss_in);
-
-                bool pass;
-                while (true) {
-                    string s_solve, s_naive;
-                    ans_solve_ss >> s_solve;
-                    ans_naive_ss >> s_naive;
-                    if (s_solve != s_naive) {
-                        pass = false;
-                        break;
-                    }
-                    if (ans_solve_ss.eof() && ans_naive_ss.eof()) {
-                        pass = true;
-                        break;
-                    }
-                    else if (ans_solve_ss.eof() || ans_naive_ss.eof()) {
-                        pass = false;
-                        break;
-                    }
-                }
-
-                clear_ss(ans_solve_ss);
-                clear_ss(ans_naive_ss);
-                if (!pass) {
-                    std_out << "! Counterexample has Found:" << endl;
-                    std_out << testcase << endl;
-                    std_out << "- Answer of solve():" << endl;
-                    std_out << ans_solve << endl;
-                    std_out << "- Answer of naive():" << endl;
-                    std_out << ans_naive << endl;
-
-                    std_in >> discarded_input;
-                    std_out << endl;
-                    i--;
-                    continue;
-                }
-            }
-            else if (MODE == -2) {
-                stringstream out_check_ss;
-                string out_check;
-
-                ss_in << testcase << endl;
-                ss_in << ans_solve;
-                auto pass = check();
-                out_check_ss << read_ss(ss_out);
-                out_check = out_check_ss.str();
-                clear_ss(ss_in);
-
-                clear_ss(ans_solve_ss);
-                clear_ss(out_check_ss);
-                if (!pass) {
-                    std_out << "! Counterexample has Found:" << endl;
-                    std_out << testcase << endl;
-                    std_out << "- Answer of solve():" << endl;
-                    std_out << ans_solve << endl;
-                    std_out << "- Output of check():" << endl;
-                    std_out << out_check << endl;
-
-                    std_in >> discarded_input;
-                    std_out << endl;
-                    i--;
-                    continue;
-                }
-            }
-
-            if (i == i_target) {
-                std_out << "- " << i << " Cases Passed" << endl << endl;
-                i_target *= 2;
-            }
-        }
-    }
+    stringstream dummy_cerr;if (LOCAL == 1 && CPHEXT == 0 && HIDE_CERR) {cerr.rdbuf(dummy_cerr.rdbuf());}if (LOCAL == 0 || CPHEXT == 1 || MODE >= 0) { if (LOCAL == 0 || CPHEXT == 1 || MODE == 0) solve();else if (MODE == 1) naive();else if (MODE == 2) check();else if (MODE == 4) jikken();else if (MODE == 3) {stringstream ss;CaseGenerator cg(ss);next_case(cg);cout << ss.str() << endl;}}else {string discarded_input;auto cin_rdbuf = cin.rdbuf();auto cout_rdbuf = cout.rdbuf();istream std_in(cin_rdbuf);ostream std_out(cout_rdbuf);stringstream ss_in;stringstream ss_out;cin.rdbuf(ss_in.rdbuf());cout.rdbuf(ss_out.rdbuf());stringstream ss_gen;CaseGenerator cg(ss_gen);auto clear_ss = [&](stringstream& ss){ss.str("");ss.clear(std::stringstream::goodbit);};auto read_ss = [&](stringstream& ss){auto result = ss.str();clear_ss(ss);return result;};auto generate = [&]{next_case(cg);ss_gen << endl;return read_ss(ss_gen);};std_out << "- Example of Generated Case:" << endl;std_out << generate() << endl;stringstream ans_solve_ss;string ans_solve;int i_target = 1;for (int i = 1;; i++) {auto testcase = generate();if (SHOW_EVERY_TESTCASES) {std_out << "- Case " << i << ":" << endl;std_out << generate() << endl;}ss_in << testcase;solve();ans_solve_ss << read_ss(ss_out);ans_solve = ans_solve_ss.str();clear_ss(ss_in);if (MODE == -1){stringstream ans_naive_ss;string ans_naive;ss_in << testcase;naive();ans_naive_ss << read_ss(ss_out);ans_naive = ans_naive_ss.str();clear_ss(ss_in);bool pass;while (true) {string s_solve, s_naive;ans_solve_ss >> s_solve;ans_naive_ss >> s_naive;if (s_solve != s_naive) {pass = false;break;}if (ans_solve_ss.eof() && ans_naive_ss.eof()) {pass = true;break;}else if (ans_solve_ss.eof() || ans_naive_ss.eof()) {pass = false;break;}}clear_ss(ans_solve_ss);clear_ss(ans_naive_ss);if (!pass) {std_out << "! Counterexample has Found:" << endl;std_out << testcase << endl;std_out << "- Answer of solve():" << endl;std_out << ans_solve << endl;std_out << "- Answer of naive():" << endl;std_out << ans_naive << endl;std_in >> discarded_input;std_out << endl;i--;continue;}}else if (MODE == -2) {stringstream out_check_ss;string out_check;ss_in << testcase << endl;ss_in << ans_solve;auto pass = check();out_check_ss << read_ss(ss_out);out_check = out_check_ss.str();clear_ss(ss_in);clear_ss(ans_solve_ss);clear_ss(out_check_ss);if (!pass) {std_out << "! Counterexample has Found:" << endl;std_out << testcase << endl;std_out << "- Answer of solve():" << endl;std_out << ans_solve << endl;std_out << "- Output of check():" << endl;std_out << out_check << endl;std_in >> discarded_input;std_out << endl;i--;continue;}}if (i == i_target) {std_out << "- " << i << " Cases Passed" << endl << endl;i_target *= 2;}}}
 }
