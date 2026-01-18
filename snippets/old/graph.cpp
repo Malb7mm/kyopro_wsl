@@ -1,0 +1,1 @@
+vector<vector<int>> G(n+1,vector<int>());

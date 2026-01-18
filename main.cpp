@@ -1,14 +1,24 @@
 // template reference: https://qiita.com/sorachandu/items/041169d34b9f9b99bcf7
-// solve() is around line 480
+// solve() is around line 770
 
-//for library checker
-//#define ATCODER 1
+//for library checker/yukicoder
+#define ATCODER 1
 
 #include <bits/stdc++.h>
 using namespace std;
 
+//https://github.com/atcoder/ac-library/blob/864245a00b00dd008d1abfdc239618fdb7d139da/atcoder/dsu.hpp
+#ifndef ATCODER_DSU_HPP
+#define ATCODER_DSU_HPP 1
+namespace atcoder {struct dsu {public:dsu() : _n(0) {}explicit dsu(int n) : _n(n), parent_or_size(n, -1) {}int merge(int a, int b) {assert(0 <= a && a < _n);assert(0 <= b && b < _n);int x = leader(a), y = leader(b);if (x == y) return x;if (-parent_or_size[x] < -parent_or_size[y]) std::swap(x, y);parent_or_size[x] += parent_or_size[y];parent_or_size[y] = x;return x;}bool same(int a, int b) {assert(0 <= a && a < _n);assert(0 <= b && b < _n);return leader(a) == leader(b);}int leader(int a) {assert(0 <= a && a < _n);return _leader(a);}int size(int a) {assert(0 <= a && a < _n);return -parent_or_size[leader(a)];}std::vector<std::vector<int>> groups() {std::vector<int> leader_buf(_n), group_size(_n);for (int i = 0; i < _n; i++) {leader_buf[i] = leader(i);group_size[leader_buf[i]]++;}std::vector<std::vector<int>> result(_n);for (int i = 0; i < _n; i++) {result[i].reserve(group_size[i]);}for (int i = 0; i < _n; i++) {result[leader_buf[i]].push_back(i);}result.erase(std::remove_if(result.begin(), result.end(),[&](const std::vector<int>& v) { return v.empty(); }),result.end());return result;}private:int _n;std::vector<int> parent_or_size;int _leader(int a) {if (parent_or_size[a] < 0) return a;return parent_or_size[a] = _leader(parent_or_size[a]);}};}
+#endif  // ATCODER_DSU_HPP
+
+
+
+namespace atcoder {}
+using namespace atcoder;
 #ifdef ATCODER
-#include <atcoder/dsu>
+#include <atcoder/fenwicktree>
 #include <atcoder/segtree>
 #include <atcoder/lazysegtree>
 #include <atcoder/convolution>
@@ -16,7 +26,7 @@ using namespace std;
 #include <atcoder/modint>
 #include <atcoder/string>
 #include <atcoder/scc>
-using namespace atcoder;
+#include <atcoder/mincostflow>
 using mint10 = modint1000000007;
 using mint = modint998244353;
 #endif
@@ -25,24 +35,30 @@ using ll = long long;
 using ull = unsigned long long;
 #define INF (1 << 30)
 #define INFL (1LL << 48)
-#define INFLL (1LL << 60)
+#define INFLL (1LL << 62)
+#define LL18 (1000000000000000000LL)
+#define LL9 (1000000000LL)
 
 #define walk2(dr, dc) for (auto [dr, dc] : vector<pair<int, int>>{{1, 0}, {0, 1}, {-1, 0}, {0, -1}})
 #define walk3(dr, dc, i) for (auto [dr, dc, i] : vector<tuple<int, int, int>>{{1, 0, 0}, {0, 1, 1}, {-1, 0, 2}, {0, -1, 3}})
 #define walk_selector(_1, _2, _3, NAME, ...) NAME
 #define walk(...) walk_selector(__VA_ARGS__, walk3, walk2)(__VA_ARGS__)
+#define walkx(dr, dc) for (auto [dr, dc] : vector<pair<int, int>>{{1, 0}, {0, 1}, {-1, 0}, {0, -1}, {1, 1}, {1, -1}, {-1, 1}, {-1, -1}})
 #define within(l,v,r) (l <= v && v <= r)
 #define rep2(i, n) for (ll i = 0; i < (ll)(n); i++)
 #define rep3(i, x, n) for (ll i = (ll)(x); i < (ll)(n); i++)
-#define rep_selector(_1, _2, _3, NAME, ...) NAME
-#define rep(...) rep_selector(__VA_ARGS__, rep3, rep2)(__VA_ARGS__)
+#define rep4(i, x, n, s) for (ll i = (ll)(x); i < (ll)(n); i += s)
+#define rep_selector(_1, _2, _3, _4, NAME, ...) NAME
+#define rep(...) rep_selector(__VA_ARGS__, rep4, rep3, rep2)(__VA_ARGS__)
 #define reprev2(i, n) for (ll i = (ll)(n)-1; i >= 0; i--)
 #define reprev3(i, x, n) for (ll i = (ll)(n)-1; i >= (ll)(x); i--)
-#define reprev_selector(_1, _2, _3, NAME, ...) NAME
-#define reprev(...) reprev_selector(__VA_ARGS__, reprev3, reprev2)(__VA_ARGS__)
+#define reprev4(i, x, n, s) for (ll i = (ll)(n)-1; i >= (ll)(x); i -= s)
+#define reprev_selector(_1, _2, _3, _4, NAME, ...) NAME
+#define reprev(...) reprev_selector(__VA_ARGS__, reprev4, reprev3, reprev2)(__VA_ARGS__)
 #define repsubset(i, s) for (ll i = (ll)(s); i >= 0; i--, i &= (i >= 0 ? s : i))
 #define all(x) x.begin(), x.end()
 #define rall(x) x.rbegin(), x.rend()
+#define ansyn(x) cout << (x ? "yes" : "no") << endl
 #define ansYn(x) cout << (x ? "Yes" : "No") << endl
 #define ansYN(x) cout << (x ? "YES" : "NO") << endl
 #define cin1(a) a; cin >> a
@@ -55,16 +71,6 @@ using ull = unsigned long long;
 #define cin8(a, b, c, d, e, f, g, h) a, b, c, d, e, f, g, h; cin >> a >> b >> c >> d >> e >> f >> g >> h
 #define cin_selector(_1, _2, _3, _4, _5, _6, _7, _8, NAME, ...) NAME
 #define cin(...) cin_selector(__VA_ARGS__, cin8, cin7, cin6, cin5, cin4, cin3, cin2, cin1)(__VA_ARGS__)
-#define vec3(T, w1, init) vector<T>(w1, init)
-#define vec4(T, w1, w2, init) vector<vector<T>>(w1, vec3(T, w2, init))
-#define vec5(T, w1, w2, w3, init) vector<vector<vector<T>>>(w1, vec4(T, w2, w3, init))
-#define vec6(T, w1, w2, w3, w4, init) vector<vector<vector<vector<T>>>>(w1, vec5(T, w2, w3, w4, init))
-#define vec7(T, w1, w2, w3, w4, w5, init) vector<vector<vector<vector<vector<T>>>>>(w1, vec6(T, w2, w3, w4, w5, init))
-#define vec8(T, w1, w2, w3, w4, w5, w6, init) vector<vector<vector<vector<vector<vector<T>>>>>>(w1, vec7(T, w2, w3, w4, w5, w6, init))
-#define vec9(T, w1, w2, w3, w4, w5, w6, w7, init) vector<vector<vector<vector<vector<vector<vector<T>>>>>>>(w1, vec8(T, w2, w3, w4, w5, w6, w7, init))
-#define vec10(T, w1, w2, w3, w4, w5, w6, w7, w8, init) vector<vector<vector<vector<vector<vector<vector<vector<T>>>>>>>>(w1, vec9(T, w2, w3, w4, w5, w6, w7, w8, init))
-#define vec_selector(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, NAME, ...) NAME
-#define vec(...) vec_selector(__VA_ARGS__, vec10, vec9, vec8, vec7, vec6, vec5, vec4, vec3)(__VA_ARGS__)
 
 #ifdef LOCAL
 #define debug1(x) debug_cerr(#x, x)
@@ -87,6 +93,107 @@ using ull = unsigned long long;
 #define CPHEXT 0
 #endif
 
+constexpr char el = '\n';
+constexpr char sp = ' ';
+
+#include<ext/pb_ds/assoc_container.hpp>
+#include<ext/pb_ds/tree_policy.hpp>
+#include<ext/pb_ds/tag_and_trait.hpp>
+using namespace __gnu_pbds;
+template<typename T,typename comp=less<T>>
+using indexed_set = tree<T, null_type, comp, rb_tree_tag, tree_order_statistics_node_update>;
+
+template<typename T,typename T2>
+using pqueue = priority_queue<T,vector<T>,T2>;
+
+template<typename T, typename... Args>
+auto Vec(T init, int n, Args... args) {
+    if constexpr (sizeof...(args) == 0) {
+        return std::vector<T>(n, init);
+    } else {
+        return std::vector(n, Vec<T>(init, args...));
+    }
+}
+
+template <typename T, typename = void>
+struct is_tuple_like : std::false_type {};
+template <typename T>
+struct is_tuple_like<T, std::void_t<decltype(std::tuple_size<T>::value)>> : std::true_type {};
+template<typename T>
+void read_element(T& val) {
+    if constexpr (is_tuple_like<T>::value) {
+        std::apply([](auto&... args) {
+            (read_element(args), ...);
+        }, val);
+    } else {
+        std::cin >> val;
+    }
+}
+template<typename T>
+inline vector<T> vread(int n, int offset = 0) {
+    vector<T> result(n + offset);
+    for (int i = 0; i < n; i++) {
+        read_element(result[i + offset]);
+    }
+    return result;
+}
+template<typename T>
+inline vector<vector<T>> vread2d(int h, int w, int offset = 0, int offset2 = -1) {
+    if (offset2 == -1) offset2 = offset;
+    vector<vector<T>> result(h + offset, vector<T>(w + offset2));
+    for (int i = 0; i < h; i++) {
+        for (int j = 0; j < w; j++) {
+            read_element(result[i + offset][j + offset2]);
+        }
+    }
+    return result;
+}
+
+std::ostream& operator<<(std::ostream& os, __uint128_t n) {
+    if (n == 0) return os << "0";
+    std::string s;
+    while (n > 0) {
+        s += (char)('0' + (n % 10));
+        n /= 10;
+    }
+    std::reverse(s.begin(), s.end());
+    return os << s;
+}
+std::ostream& operator<<(std::ostream& os, __int128_t n) {
+    if (n == 0) return os << "0";
+    if (n < 0) {
+        os << "-";
+        n = -n;
+    }
+    return os << (__uint128_t)n;
+}
+std::istream& operator>>(std::istream& is, __int128_t& n) {
+    std::string s;
+    is >> s;
+    n = 0;
+    bool neg = false;
+    for (size_t i = 0; i < s.size(); i++) {
+        if (s[i] == '-') neg = true;
+        else n = n * 10 + (s[i] - '0');
+    }
+    if (neg) n = -n;
+    return is;
+}
+std::istream& operator>>(std::istream& is, __uint128_t& n) {
+    std::string s;
+    is >> s;
+    n = 0;
+    for (size_t i = 0; i < s.size(); i++) {
+        n = n * 10 + (s[i] - '0');
+    }
+    return is;
+}
+
+template<typename T>
+inline T div_ceil(T a, T b) {
+    return (a + b - 1) / b;
+}
+
 template<typename T, typename... Args> 
 inline bool chmax(T &ref, Args&&... args) {
     auto old = ref;
@@ -98,6 +205,12 @@ inline bool chmin(T &ref, Args&&... args) {
     auto old = ref;
     ref = std::min({ref, (T)args...});
     return old != ref;
+}
+template<typename T>
+inline bool chclamp(T& val, T minv, T maxv) {
+    auto old_val = val;
+    val = max(minv, min(maxv, val));
+    return old_val != val;
 }
 
 template<typename T, typename... Args>
@@ -129,6 +242,16 @@ inline bool isnset_any(T &val, Args&&... bits) {
     return (... || !(bool)(val & (1LL<<bits)));
 }
 
+template <typename F>
+inline long long nibutan(long long ok, long long ng, F f) {
+    while (std::abs(ok - ng) > 1) {
+        auto mid = std::min(ok, ng) + std::abs(ok - ng) / 2;
+        if (f(mid)) ok = mid;
+        else ng = mid;
+    }
+    return ok;
+}
+
 template <int... Is>
 struct CustomComp {
     template <typename T>
@@ -153,8 +276,16 @@ struct CustomComp {
         return result;
     }
 };
+// 正のとき l<r でtrue
+// ソート:正=昇順
+// 優先度付きキュー:負=昇順
 template <int... Is>
 constexpr CustomComp<Is...> comp;
+// 正のとき l<r でtrue
+// ソート:正=昇順
+// 優先度付きキュー:負=昇順
+template <int... Is>
+using Comp = decltype(comp<Is...>);
 
 void multicases(function<void()> f) {
     int T;
@@ -163,6 +294,118 @@ void multicases(function<void()> f) {
         f();
     }
 }
+
+template <typename T>
+struct ofable {
+    T val;
+    bool is_overflow;
+
+    constexpr ofable() : val(0), is_overflow(false) {}
+    constexpr ofable(T v) : val(v), is_overflow(false) {}
+    constexpr ofable(T v, bool o) : val(o ? 0 : v), is_overflow(o) {}
+    constexpr explicit operator T() const { return val; }
+
+    constexpr ofable<T>& operator+=(const ofable<T>& rhs) {
+        if (is_overflow || rhs.is_overflow) {
+            is_overflow = true; val = 0;
+        } else {
+            if (__builtin_add_overflow(val, rhs.val, &val)) {
+                val = 0; is_overflow = true;
+            }
+        }
+        return *this;
+    }
+    constexpr ofable<T>& operator-=(const ofable<T>& rhs) {
+        if (is_overflow || rhs.is_overflow) {
+            is_overflow = true; val = 0;
+        } else {
+            if (__builtin_sub_overflow(val, rhs.val, &val)) {
+                val = 0; is_overflow = true;
+            }
+        }
+        return *this;
+    }
+    constexpr ofable<T>& operator*=(const ofable<T>& rhs) {
+        if (is_overflow || rhs.is_overflow) {
+            is_overflow = true; val = 0;
+        } else {
+            if (__builtin_mul_overflow(val, rhs.val, &val)) {
+                val = 0; is_overflow = true;
+            }
+        }
+        return *this;
+    }
+    constexpr ofable<T>& operator/=(const ofable<T>& rhs) {
+        if (is_overflow || rhs.is_overflow) {
+            is_overflow = true; val = 0;
+            return *this;
+        }
+        if (val == std::numeric_limits<T>::min() && rhs.val == -1) {
+            is_overflow = true; val = 0;
+        } else {
+            val /= rhs.val;
+        }
+        return *this;
+    }
+    constexpr ofable<T>& operator<<=(int shift) {
+        if (is_overflow) return *this;
+        if (shift < 0) {
+            is_overflow = true; val = 0; return *this;
+        }
+        if (val == 0) return *this;
+
+        T max_val = std::numeric_limits<T>::max();
+        T min_val = std::numeric_limits<T>::min();
+
+        if (shift >= std::numeric_limits<T>::digits + 1) {
+             is_overflow = true; val = 0;
+        } else {
+            if (val > 0) {
+                if (val > (max_val >> shift)) { is_overflow = true; val = 0; }
+                else val <<= shift;
+            } else {
+                if (val < (min_val >> shift)) { is_overflow = true; val = 0; }
+                else val <<= shift;
+            }
+        }
+        return *this;
+    }
+
+    constexpr ofable<T>& operator>>=(int shift) {
+        if (is_overflow) return *this;
+        val >>= shift;
+        return *this;
+    }
+
+    friend constexpr ofable<T> operator+(ofable<T> lhs, const ofable<T>& rhs) { return lhs += rhs; }
+    friend constexpr ofable<T> operator-(ofable<T> lhs, const ofable<T>& rhs) { return lhs -= rhs; }
+    friend constexpr ofable<T> operator*(ofable<T> lhs, const ofable<T>& rhs) { return lhs *= rhs; }
+    friend constexpr ofable<T> operator/(ofable<T> lhs, const ofable<T>& rhs) { return lhs /= rhs; }
+    friend constexpr ofable<T> operator<<(ofable<T> lhs, int shift) { return lhs <<= shift; }
+    friend constexpr ofable<T> operator>>(ofable<T> lhs, int shift) { return lhs >>= shift; }
+
+    friend constexpr ofable<T> operator+(ofable<T> lhs, T rhs) { return lhs += ofable<T>(rhs); }
+    friend constexpr ofable<T> operator-(ofable<T> lhs, T rhs) { return lhs -= ofable<T>(rhs); }
+    friend constexpr ofable<T> operator*(ofable<T> lhs, T rhs) { return lhs *= ofable<T>(rhs); }
+    friend constexpr ofable<T> operator/(ofable<T> lhs, T rhs) { return lhs /= ofable<T>(rhs); }
+    friend constexpr ofable<T> operator+(T lhs, const ofable<T>& rhs) { return ofable<T>(lhs) += rhs; }
+    friend constexpr ofable<T> operator-(T lhs, const ofable<T>& rhs) { return ofable<T>(lhs) -= rhs; }
+    friend constexpr ofable<T> operator*(T lhs, const ofable<T>& rhs) { return ofable<T>(lhs) *= rhs; }
+    friend constexpr ofable<T> operator/(T lhs, const ofable<T>& rhs) { return ofable<T>(lhs) /= rhs; }
+
+    friend constexpr bool operator==(const ofable<T>& lhs, const ofable<T>& rhs) {
+        return lhs.val == rhs.val && lhs.is_overflow == rhs.is_overflow;
+    }
+    friend constexpr bool operator!=(const ofable<T>& lhs, const ofable<T>& rhs) { return !(lhs == rhs); }
+    friend constexpr bool operator<(const ofable<T>& lhs, const ofable<T>& rhs) { return lhs.val < rhs.val; }
+    friend constexpr bool operator>(const ofable<T>& lhs, const ofable<T>& rhs) { return lhs.val > rhs.val; }
+
+    friend std::ostream& operator<<(std::ostream& os, const ofable<T>& v) {
+        if (v.is_overflow) os << "Overflow";
+        else os << v.val;
+        return os;
+    }
+};
 
 template <typename T>
 concept Streamable = requires(std::ostream& os, T x) { os << x; };
@@ -183,6 +426,7 @@ template <class S, auto op, auto e, class F, auto m, auto c, auto id>
 struct is_acl_lazy_segtree<atcoder::lazy_segtree<S, op, e, F, m, c, id>> : std::true_type {};
 #endif
 
+
 struct DebugImpl {
     template <typename T>
     static void run(const T& value, int nest) {
@@ -190,7 +434,12 @@ struct DebugImpl {
             run(value.val(), nest);
         }
         else if constexpr (Streamable<T>) {
-            if constexpr (std::is_integral_v<T>) {
+            if constexpr (std::is_unsigned_v<T>) {
+                if      (value >=  INFL)  std::cerr << "INF";
+                else if (value ==  INF)   std::cerr << "inf";
+                else std::cerr << value;
+            }
+            else if constexpr (std::is_integral_v<T>) {
                 if      (value >=  INFL)  std::cerr << "INF";
                 else if (value <= -INFL)  std::cerr << "-INF";
                 else if (value ==  INF)   std::cerr << "inf";
@@ -253,6 +502,47 @@ void debug_cerr(std::string name, auto value) {
     std::cerr << endl;
 }
 
+template<class T>
+struct shifted_vector : std::vector<T> {
+    int origin;
+    shifted_vector(int l, int r) : std::vector<T>(r - l + 1), origin(-l) {}
+    T& operator[](int i) { return std::vector<T>::at(i + origin); }
+};
+
+namespace ahc {
+    std::chrono::system_clock::time_point now() {
+        return std::chrono::system_clock::now();
+    }
+
+    double elapsed(std::chrono::system_clock::time_point start) {
+        auto now = ahc::now();
+        return std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count();
+    }
+
+    unsigned int rand() {
+        static unsigned int x = 123456789, y = 362436069, z = 521288629, w = 88675123;
+        unsigned int t = x ^ (x << 11);
+        x = y; y = z; z = w;
+        return w = ((w ^ (w >> 19)) ^ (t ^ (t >> 8)));
+    }
+
+    bool sa_min(long long prev_score, long long new_score, double current_time, double end_time, double start_temp, double end_temp) {
+        if (new_score < prev_score) return true;
+        double progress = current_time / end_time;
+        if (progress >= 1.0) progress = 1.0;
+        double temp = start_temp + (end_temp - start_temp) * progress;
+        if (temp <= 1e-9) return false;
+        double delta = (double)(new_score - prev_score);
+        double prob = std::exp(-delta / temp);
+        double p = (double)(rand() % 100000) / 100000;
+        return p < prob;
+    }
+
+    bool sa_max(long long prev_score, long long new_score, double current_time, double end_time, double start_temp, double end_temp) {
+        return sa_min(-prev_score, -new_score, current_time, end_time, start_temp, end_temp);
+    }
+}
+
 class Random {
 public:
     std::mt19937_64 engine;
@@ -275,7 +565,6 @@ public:
     }
 };
 
-#ifdef ATCODER
 class GraphGenerator {
     Random random;
     std::stringstream& ss;
@@ -289,6 +578,7 @@ public:
     bool multigraph = false;
     bool directed = false;
     bool cycle = true;
+    bool connected = true;
 
     GraphGenerator(std::stringstream& ss_in): ss(ss_in) {}
 
@@ -374,6 +664,12 @@ public:
         }
         if (!success) return false;
 
+        if (connected) {
+            for (int i = 2; i <= n; i++) {
+                if (!uf.same(1, i)) return false;
+            }
+        }
+
         if (!cycle && directed) {
             set<ll> seen, finished;
 
@@ -408,7 +704,6 @@ public:
         }
     }
 };
-#endif
 
 class CaseGenerator {
     std::stringstream& ss;
@@ -450,11 +745,9 @@ public:
         ss << value << " ";
         return value;
     }
-#ifdef ATCODER
     GraphGenerator make_graph() {
         return GraphGenerator(ss);
     }
-#endif
 };
 
 // *-*-*-*-*-*-*-*-*-*-*-* //
@@ -466,177 +759,25 @@ public:
 //                         //
 // *-*-*-*-*-*-*-*-*-*-*-* //
 
-struct Rooted {
-private:
-    std::size_t size_;
-    std::vector<int> depth_;
-    std::vector<long long> dist_;
-    std::vector<std::vector<int>> parent_;
-    std::vector<std::vector<int>> childs_;
-    std::size_t doubling_depth_;
-    std::vector<int> subtree_size_;
-    std::vector<int> in_, out_, in2x_, out2x_;
+#define STRUCT_ID__ lseg1
+namespace mystd {
+    namespace STRUCT_ID__ {
+        // https://betrue12.hateblo.jp/entry/2020/09/23/005940
+        using S = ll;
+        using F = ll;
 
-    void init_vectors(int root) {
-        assert(0 <= root);
-        assert(root < size_);
-        depth_.assign(size_, 0);
-        dist_.assign(size_, 0);
-        subtree_size_.assign(size_, 0);
-        in_.assign(size_, 0);
-        out_.assign(size_, 0);
-        in2x_.assign(size_, 0);
-        out2x_.assign(size_, 0);
-        childs_.assign(size_, {});
-        doubling_depth_ = 1;
-        while ((1 << doubling_depth_) < size_) doubling_depth_++;
-        parent_ = std::vector<std::vector<int>>(doubling_depth_, std::vector<int>(size_, root));
+        S op(S a, S b){ return max(a, b); }
+        S e(){ return -INFLL; }
+        S mapping(F f, S x){ return f+x; }
+        F composition(F f, F g){ return f+g; }
+        F id(){ return 0; }
+
+        using It = lazy_segtree<S,op,e,F,mapping,composition,id>;
     }
-    
-    void build_doubling() {
-        for (int k = 1; k < doubling_depth_; k++) {
-            for (int i = 0; i < size_; i++) {
-                parent_[k][i] = parent_[k - 1][parent_[k - 1][i]];
-            }
-        }
-    }
-
-public:
-    struct EulerTourRange {
-        int l;
-        int r;
-    };
-
-    // `G`は 0-indexed の木
-    explicit Rooted(const std::vector<std::vector<int>>& G, int root)
-        : size_(G.size()) {
-        init_vectors(root);
-        int timer = 0, timer2x = 0;
-        function<int(int, int, int, long long)> dfs = [&](int u, int from, int distance, long long w_distance) {
-            depth_[u] = distance;
-            dist_[u] = w_distance;
-            parent_[0][u] = from;
-            in_[u] = timer++;
-            in2x_[u] = timer2x++;
-            int subtree_size = 1;
-            for (const auto& v : G[u]) {
-                if (v == from) continue;
-                subtree_size += dfs(v, u, distance + 1, w_distance + 1);
-                childs_[u].push_back(v);
-            }
-            subtree_size_[u] = subtree_size;
-            out_[u] = timer;
-            out2x_[u] = timer++;
-            return subtree_size;
-        };
-        dfs(root, root, 0, 0);
-        build_doubling();
-    }
-
-    // `G`は 0-indexed の重み付き木
-    explicit Rooted(const std::vector<std::vector<pair<int, long long>>>& G, int root)
-        : size_(G.size()) {
-        init_vectors(root);
-        int timer = 0, timer2x = 0;
-        function<int(int, int, int, long long)> dfs = [&](int u, int from, int distance, long long w_distance) {
-            depth_[u] = distance;
-            dist_[u] = w_distance;
-            parent_[0][u] = from;
-            in_[u] = timer++;
-            in2x_[u] = timer2x++;
-            int subtree_size = 1;
-            for (const auto& [v, w] : G[u]) {
-                if (v == from) continue;
-                subtree_size += dfs(v, u, distance + 1, w_distance + w);
-                childs_[u].push_back(v);
-            }
-            subtree_size_[u] = subtree_size;
-            out_[u] = timer;
-            out2x_[u] = timer++;
-            return subtree_size;
-        };
-        dfs(root, root, 0, 0);
-        build_doubling();
-    }
-
-    int forward(int u, long long count) {
-        int current = u;
-        for (int k = 0; k < doubling_depth_; k++) {
-            if (!((count >> k) & 1)) continue;
-            current = parent_[k][current];
-        }
-        return current;
-    }
-
-    int lca(int u, int v) {
-        if (depth_[u] < depth_[v]) swap(u, v);
-        u = forward(u, depth_[u] - depth_[v]);
-        if (u == v) return u;
-
-        for (int k = doubling_depth_ - 1; k >= 0; k--) {
-            if (parent_[k][u] != parent_[k][v]) {
-                u = parent_[k][u];
-                v = parent_[k][v];
-            }
-        }
-        return parent_[0][u];
-    }
-
-    long long dist(int u, int v) {
-        return dist_[u] + dist_[v] - 2 * dist_[lca(u, v)];
-    }
-
-    int size(int u) {
-        return size_;
-    }
-
-    int subtree_size(int u) {
-        return subtree_size_[u];
-    }
-
-    bool is_on_path(int u, int v, int a) {
-        return dist(u, v) == dist(u, a) + dist(a, v);
-    }
-
-    bool is_ancestor(int u, int may_ancestor) {
-        return in_[may_ancestor] <= in_[u] && out_[u] <= out_[may_ancestor];
-    }
-
-    EulerTourRange tour_range(int u) {
-        return {in_[u], out_[u]};
-    }
-
-    EulerTourRange tour_range2x(int u) {
-        return {in2x_[u], out2x_[u]};
-    }
-
-    long long count_superpaths(int u, int v) {
-        if (u == v) return count_superpaths(u);
-        auto lca_uv = lca(u, v);
-        if (lca_uv == v) swap(u, v);
-        if (lca_uv == u) {
-            int diff = depth_[v] - depth_[u];
-            int w = forward(v, diff - 1);
-            long long p_size = size_ - subtree_size_[w];
-            return (long long)p_size * subtree_size_[v];
-        }
-        else {
-            return (long long)subtree_size_[u] * subtree_size_[v];
-        }
-    }
-
-    // [u,u] を含む
-    long long count_superpaths(int u) {
-        long long ans = (long long)size_ * (size_ - 1) / 2;
-        long long p_size = size_ - subtree_size_[u];
-        ans -= p_size * (p_size - 1) / 2;
-        for (const auto& v : childs_[u]) {
-            long long v_size = subtree_size_[v];
-            ans -= v_size * (v_size - 1) / 2;
-        }
-        return ans + 1;
-    }
-};
+}
+#undef STRUCT_ID__
+using namespace mystd;
+// lseg1::It seg(vector<lseg1::S>(n,0));
 
 //#define int ll
 
@@ -644,12 +785,29 @@ public:
 //#pragma GCC optimize("O3")
 //#pragma GCC optimize("unroll-loops")
 
-#define MODE 1 // -2: test(check) -1: test(naive) 0:solve 1:naive 2:check 3:next_case 4:jikken
+//(these will be ignored on online judge)
+#define MODE -1 // -2: test(check) -1: test(naive) 0:solve 1:naive 2:check 3:next_case 4:jikken
 #define SHOW_EVERY_TESTCASES false
 #define HIDE_CERR false
 
 void solve() {
-
+    ll cin(n,q);
+    vector<ll> A(n);
+    rep(i,n)cin>>A[i];
+    seg1::It seg(A);
+    rep(i,q){
+        ll cin(t,l,r);l--;r--;
+        if(t==1){
+            auto L=seg.get(l);
+            auto R=seg.get(r);
+            seg.set(l,R);
+            seg.set(r,L);
+        }
+        if(t==2){
+            auto minv=seg.prod(l,r+1);
+            cout<<seg.max_right(l,[&](auto e){return e>minv;})+1<<el;
+        }
+    }
 }
 
 void naive() {
@@ -657,11 +815,11 @@ void naive() {
 }
 
 bool check() {
-    return false;
+    return true;
 }
 
 void next_case(CaseGenerator& cg) {
-
+    
 }
 
 void jikken() {
@@ -673,5 +831,14 @@ signed main() {
     std::cin.tie(nullptr);
     cerr << boolalpha << fixed << setprecision(3);
     cout << fixed << setprecision(15);
-    stringstream dummy_cerr;if (LOCAL == 1 && CPHEXT == 0 && HIDE_CERR) {cerr.rdbuf(dummy_cerr.rdbuf());}if (LOCAL == 0 || CPHEXT == 1 || MODE >= 0) { if (LOCAL == 0 || CPHEXT == 1 || MODE == 0) solve();else if (MODE == 1) naive();else if (MODE == 2) check();else if (MODE == 4) jikken();else if (MODE == 3) {stringstream ss;CaseGenerator cg(ss);next_case(cg);cout << ss.str() << endl;}}else {string discarded_input;auto cin_rdbuf = cin.rdbuf();auto cout_rdbuf = cout.rdbuf();istream std_in(cin_rdbuf);ostream std_out(cout_rdbuf);stringstream ss_in;stringstream ss_out;cin.rdbuf(ss_in.rdbuf());cout.rdbuf(ss_out.rdbuf());stringstream ss_gen;CaseGenerator cg(ss_gen);auto clear_ss = [&](stringstream& ss){ss.str("");ss.clear(std::stringstream::goodbit);};auto read_ss = [&](stringstream& ss){auto result = ss.str();clear_ss(ss);return result;};auto generate = [&]{next_case(cg);ss_gen << endl;return read_ss(ss_gen);};std_out << "- Example of Generated Case:" << endl;std_out << generate() << endl;stringstream ans_solve_ss;string ans_solve;int i_target = 1;for (int i = 1;; i++) {auto testcase = generate();if (SHOW_EVERY_TESTCASES) {std_out << "- Case " << i << ":" << endl;std_out << generate() << endl;}ss_in << testcase;solve();ans_solve_ss << read_ss(ss_out);ans_solve = ans_solve_ss.str();clear_ss(ss_in);if (MODE == -1){stringstream ans_naive_ss;string ans_naive;ss_in << testcase;naive();ans_naive_ss << read_ss(ss_out);ans_naive = ans_naive_ss.str();clear_ss(ss_in);bool pass;while (true) {string s_solve, s_naive;ans_solve_ss >> s_solve;ans_naive_ss >> s_naive;if (s_solve != s_naive) {pass = false;break;}if (ans_solve_ss.eof() && ans_naive_ss.eof()) {pass = true;break;}else if (ans_solve_ss.eof() || ans_naive_ss.eof()) {pass = false;break;}}clear_ss(ans_solve_ss);clear_ss(ans_naive_ss);if (!pass) {std_out << "! Counterexample has Found:" << endl;std_out << testcase << endl;std_out << "- Answer of solve():" << endl;std_out << ans_solve << endl;std_out << "- Answer of naive():" << endl;std_out << ans_naive << endl;std_in >> discarded_input;std_out << endl;i--;continue;}}else if (MODE == -2) {stringstream out_check_ss;string out_check;ss_in << testcase << endl;ss_in << ans_solve;auto pass = check();out_check_ss << read_ss(ss_out);out_check = out_check_ss.str();clear_ss(ss_in);clear_ss(ans_solve_ss);clear_ss(out_check_ss);if (!pass) {std_out << "! Counterexample has Found:" << endl;std_out << testcase << endl;std_out << "- Answer of solve():" << endl;std_out << ans_solve << endl;std_out << "- Output of check():" << endl;std_out << out_check << endl;std_in >> discarded_input;std_out << endl;i--;continue;}}if (i == i_target) {std_out << "- " << i << " Cases Passed" << endl << endl;i_target *= 2;}}}
+    stringstream dummy_cerr;if (LOCAL == 1 && CPHEXT == 0 && HIDE_CERR) {cerr.rdbuf(dummy_cerr.rdbuf());}if (LOCAL == 0 || CPHEXT == 1 || MODE >= 0) { if (LOCAL == 0 || CPHEXT == 1 || MODE == 0) solve();else if (MODE == 1) naive();else if (MODE == 2) check();else if (MODE == 4) jikken();else if (MODE == 3) {stringstream ss;CaseGenerator cg(ss);next_case(cg);cout << ss.str() << endl;}}else {string discarded_input;auto cin_rdbuf = cin.rdbuf();auto cout_rdbuf = cout.rdbuf();istream std_in(cin_rdbuf);ostream std_out(cout_rdbuf);stringstream ss_in;stringstream ss_out;cin.rdbuf(ss_in.rdbuf());cout.rdbuf(ss_out.rdbuf());stringstream ss_gen;CaseGenerator cg(ss_gen);auto clear_ss = [&](stringstream& ss){ss.str("");ss.clear(std::stringstream::goodbit);};auto read_ss = [&](stringstream& ss){auto result = ss.str();clear_ss(ss);return result;};auto generate = [&]{next_case(cg);ss_gen << endl;return read_ss(ss_gen);};std_out << "- Example of Generated Case:" << endl;std_out << generate() << endl;stringstream ans_solve_ss;string ans_solve;int i_target = 1;for (int i = 1;; i++) {auto testcase = generate();if (SHOW_EVERY_TESTCASES) {std_out << "- Case " << i << ":" << endl;std_out << testcase << endl;}ss_in << testcase;solve();ans_solve_ss << read_ss(ss_out);ans_solve = ans_solve_ss.str();clear_ss(ss_in);if (MODE == -1){stringstream ans_naive_ss;string ans_naive;ss_in << testcase;naive();ans_naive_ss << read_ss(ss_out);ans_naive = ans_naive_ss.str();clear_ss(ss_in);bool pass;while (true) {string s_solve, s_naive;ans_solve_ss >> s_solve;ans_naive_ss >> s_naive;if (s_solve != s_naive) {pass = false;break;}if (ans_solve_ss.eof() && ans_naive_ss.eof()) {pass = true;break;}else if (ans_solve_ss.eof() || ans_naive_ss.eof()) {pass = false;break;}}clear_ss(ans_solve_ss);clear_ss(ans_naive_ss);if (!pass) {std_out << "! Counterexample has Found:" << endl;std_out << testcase << endl;std_out << "- Answer of solve():" << endl;std_out << ans_solve << endl;std_out << "- Answer of naive():" << endl;std_out << ans_naive << endl;std_in >> discarded_input;std_out << endl;i--;continue;}}else if (MODE == -2) {stringstream out_check_ss;string out_check;ss_in << testcase << endl;ss_in << ans_solve;auto pass = check();out_check_ss << read_ss(ss_out);out_check = out_check_ss.str();clear_ss(ss_in);clear_ss(ans_solve_ss);clear_ss(out_check_ss);if (!pass) {std_out << "! Counterexample has Found:" << endl;std_out << testcase << endl;std_out << "- Answer of solve():" << endl;std_out << ans_solve << endl;std_out << "- Output of check():" << endl;std_out << out_check << endl;std_in >> discarded_input;std_out << endl;i--;continue;}}if (i == i_target) {std_out << "- " << i << " Cases Passed" << endl << endl;i_target *= 2;}}}
 }
+
+// modの取り忘れがないか？
+// 998と10^9+7を間違えてないか？
+// 計算途中で値がオーバーフローしないか？
+// bit全探索で1<<60とかやってないか？(1LL<<60)
+// 入力制約がllの範囲でオーバーフローしていないか？
+// 入力の型を間違えていないか？(ll cin(s)とか)
+// 定数倍 map→unordered_map→vector
+// 参照絡みで事故ってないか？

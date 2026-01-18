@@ -512,7 +512,7 @@ signed main() {
             auto testcase = generate();
             if (SHOW_EVERY_TESTCASES) {
                 std_out << "- Case " << i << ":" << endl;
-                std_out << generate() << endl;
+                std_out << testcase << endl;
             }
 
             ss_in << testcase;

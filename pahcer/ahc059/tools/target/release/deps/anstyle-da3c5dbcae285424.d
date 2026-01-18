@@ -1,0 +1,12 @@
+/home/malb7mm/kyopro/pahcer/ahc059/tools/target/release/deps/anstyle-da3c5dbcae285424.d: /home/malb7mm/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/anstyle-1.0.0/src/lib.rs /home/malb7mm/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/anstyle-1.0.0/src/macros.rs /home/malb7mm/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/anstyle-1.0.0/src/color.rs /home/malb7mm/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/anstyle-1.0.0/src/effect.rs /home/malb7mm/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/anstyle-1.0.0/src/reset.rs /home/malb7mm/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/anstyle-1.0.0/src/style.rs
+
+/home/malb7mm/kyopro/pahcer/ahc059/tools/target/release/deps/libanstyle-da3c5dbcae285424.rlib: /home/malb7mm/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/anstyle-1.0.0/src/lib.rs /home/malb7mm/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/anstyle-1.0.0/src/macros.rs /home/malb7mm/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/anstyle-1.0.0/src/color.rs /home/malb7mm/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/anstyle-1.0.0/src/effect.rs /home/malb7mm/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/anstyle-1.0.0/src/reset.rs /home/malb7mm/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/anstyle-1.0.0/src/style.rs
+
+/home/malb7mm/kyopro/pahcer/ahc059/tools/target/release/deps/libanstyle-da3c5dbcae285424.rmeta: /home/malb7mm/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/anstyle-1.0.0/src/lib.rs /home/malb7mm/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/anstyle-1.0.0/src/macros.rs /home/malb7mm/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/anstyle-1.0.0/src/color.rs /home/malb7mm/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/anstyle-1.0.0/src/effect.rs /home/malb7mm/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/anstyle-1.0.0/src/reset.rs /home/malb7mm/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/anstyle-1.0.0/src/style.rs
+
+/home/malb7mm/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/anstyle-1.0.0/src/lib.rs:
+/home/malb7mm/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/anstyle-1.0.0/src/macros.rs:
+/home/malb7mm/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/anstyle-1.0.0/src/color.rs:
+/home/malb7mm/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/anstyle-1.0.0/src/effect.rs:
+/home/malb7mm/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/anstyle-1.0.0/src/reset.rs:
+/home/malb7mm/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/anstyle-1.0.0/src/style.rs:

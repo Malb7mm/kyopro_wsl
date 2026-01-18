@@ -1,4 +1,7 @@
 #!/bin/bash
-DIR=$(echo "$1" | sed -E "s/(.*)\\/.*?/\\1/")
-mkdir -p ./saved/$DIR
-cp -r ./main.cpp ./saved/${1}.cpp
+if [[ "$1" == *"/"* ]]; then
+    DIR=${1%/*}
+    mkdir -p "./saved/$DIR"
+fi
+FILE_PATH="./saved/${1}.cpp"
+cp -r ./main.cpp "$FILE_PATH"
