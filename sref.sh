@@ -16,7 +16,7 @@ mkdir -p "$(dirname "$OUT_FILE")"
 echo "Generating snippets from $SRC_DIR to $OUT_FILE ..."
 
 # ./snippets 配下のファイルを再帰的に検索し、ループ処理
-find "$SRC_DIR" -type f | while read -r filepath; do
+find "$SRC_DIR" -type f -name "*.cpp" | while read -r filepath; do
     
     # 1. パスとファイル名の加工
     # 例: ./snippets/graph/dijkstra.cpp -> graph/dijkstra.cpp
@@ -42,7 +42,7 @@ find "$SRC_DIR" -type f | while read -r filepath; do
        --arg name "$snip_name" \
        --arg prefix "$snip_prefix" \
        --argjson body "$body" \
-       '{ ($name): { "prefix": $prefix, "body": $body, "description": $name } }'
+       '{ ($name): { "prefix": $prefix, "body": $body, "description": $name, "scope": "cpp" } }'
 
 done | jq -s 'add' > "$OUT_FILE" # 4. 全てのJSONオブジェクトを結合してファイルに書き出し
 

@@ -1,4 +1,4 @@
-#define STRUCT_ID__ lseg1
+#define STRUCT_ID__ Lseg1
 namespace mystd {
     namespace STRUCT_ID__ {
         // https://betrue12.hateblo.jp/entry/2020/09/23/005940
@@ -16,4 +16,4 @@ namespace mystd {
 }
 #undef STRUCT_ID__
 using namespace mystd;
-// lseg1::It seg(vector<lseg1::S>(n,0));
+// Lseg1::It seg(vector<Lseg1::S>(n,0));

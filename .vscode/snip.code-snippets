@@ -1,8 +1,211 @@
 {
+  "seg.dynamic_fenwick_bit_2d": {
+    "prefix": "dynamic_fenwick_bit_2d",
+    "body": [
+      "// https://nyaannyaan.github.io/library/data-structure-2d/dynamic-binary-indexed-tree-2d.hpp",
+      "#line 2 \"data-structure-2d/dynamic-binary-indexed-tree-2d.hpp\"",
+      "",
+      "#line 2 \"data-structure/dynamic-binary-indexed-tree.hpp\"",
+      "",
+      "#line 2 \"data-structure/hash-map-variable-length.hpp\"",
+      "",
+      "template <typename Key, typename Val>",
+      "struct HashMap {",
+      "  using u32 = uint32_t;",
+      "  using u64 = uint64_t;",
+      "",
+      "  u32 cap, s;",
+      "  vector<Key> keys;",
+      "  vector<Val> vals;",
+      "  vector<bool> flag;",
+      "  u64 r;",
+      "  u32 shift;",
+      "  Val DefaultValue;",
+      "",
+      "  static u64 rng() {",
+      "    u64 m = chrono::duration_cast<chrono::nanoseconds>(",
+      "                chrono::high_resolution_clock::now().time_since_epoch())",
+      "                .count();",
+      "    m ^= m >> 16;",
+      "    m ^= m << 32;",
+      "    return m;",
+      "  }",
+      "",
+      "  void reallocate() {",
+      "    cap <<= 1;",
+      "    vector<Key> k(cap);",
+      "    vector<Val> v(cap);",
+      "    vector<bool> f(cap);",
+      "    u32 sh = shift - 1;",
+      "    for (int i = 0; i < (int)flag.size(); i++) {",
+      "      if (flag[i]) {",
+      "        u32 hash = (u64(keys[i]) * r) >> sh;",
+      "        while (f[hash]) hash = (hash + 1) & (cap - 1);",
+      "        k[hash] = keys[i];",
+      "        v[hash] = vals[i];",
+      "        f[hash] = 1;",
+      "      }",
+      "    }",
+      "    keys.swap(k);",
+      "    vals.swap(v);",
+      "    flag.swap(f);",
+      "    --shift;",
+      "  }",
+      "",
+      "  explicit HashMap()",
+      "      : cap(8),",
+      "        s(0),",
+      "        keys(cap),",
+      "        vals(cap),",
+      "        flag(cap),",
+      "        r(rng()),",
+      "        shift(64 - __lg(cap)),",
+      "        DefaultValue(Val()) {}",
+      "",
+      "  Val& operator[](const Key& i) {",
+      "    u32 hash = (u64(i) * r) >> shift;",
+      "    while (true) {",
+      "      if (!flag[hash]) {",
+      "        if (s + s / 4 >= cap) {",
+      "          reallocate();",
+      "          return (*this)[i];",
+      "        }",
+      "        keys[hash] = i;",
+      "        flag[hash] = 1;",
+      "        ++s;",
+      "        return vals[hash] = DefaultValue;",
+      "      }",
+      "      if (keys[hash] == i) return vals[hash];",
+      "      hash = (hash + 1) & (cap - 1);",
+      "    }",
+      "  }",
+      "",
+      "  // exist -> return pointer of Val",
+      "  // not exist -> return nullptr",
+      "  const Val* find(const Key& i) const {",
+      "    u32 hash = (u64(i) * r) >> shift;",
+      "    while (true) {",
+      "      if (!flag[hash]) return nullptr;",
+      "      if (keys[hash] == i) return &(vals[hash]);",
+      "      hash = (hash + 1) & (cap - 1);",
+      "    }",
+      "  }",
+      "",
+      "  // return vector< pair<const Key&, val& > >",
+      "  vector<pair<Key, Val>> enumerate() const {",
+      "    vector<pair<Key, Val>> ret;",
+      "    for (u32 i = 0; i < cap; ++i)",
+      "      if (flag[i]) ret.emplace_back(keys[i], vals[i]);",
+      "    return ret;",
+      "  }",
+      "",
+      "  int size() const { return s; }",
+      "",
+      "  // set default_value",
+      "  void set_default(const Val& val) { DefaultValue = val; }",
+      "};",
+      "",
+      "/**",
+      " * @brief Hash Map(可変長版)",
+      " * @docs docs/data-structure/hash-map.md",
+      " */",
+      "#line 4 \"data-structure/dynamic-binary-indexed-tree.hpp\"",
+      "",
+      "template <typename S, typename T>",
+      "struct DynamicFenwickTree {",
+      "  S N;",
+      "  HashMap<S, T> data;",
+      "  explicit DynamicFenwickTree() = default;",
+      "  explicit DynamicFenwickTree(S size) { N = size + 1; }",
+      "",
+      "  void add(S k, T x) {",
+      "    for (++k; k < N; k += k & -k) data[k] += x;",
+      "  }",
+      "",
+      "  // [0, k)",
+      "  T sum(S k) const {",
+      "    if (k < 0) return 0;",
+      "    T ret = T();",
+      "    for (; k > 0; k -= k & -k) {",
+      "      const T* p = data.find(k);",
+      "      ret += p ? *p : T();",
+      "    }",
+      "    return ret;",
+      "  }",
+      "",
+      "  // [a, b)",
+      "  T sum(S a, S b) const { return sum(b) - sum(a); }",
+      "",
+      "  T operator[](S k) const { return sum(k + 1) - sum(k); }",
+      "",
+      "  S lower_bound(T w) {",
+      "    if (w <= 0) return 0;",
+      "    S x = 0;",
+      "    for (S k = 1 << __lg(N); k; k >>= 1) {",
+      "      if (x + k <= N - 1 && data[x + k] < w) {",
+      "        w -= data[x + k];",
+      "        x += k;",
+      "      }",
+      "    }",
+      "    return x;",
+      "  }",
+      "};",
+      "",
+      "/**",
+      " * @brief 動的Binary Indexed Tree",
+      " * @docs docs/data-structure/dynamic-binary-indexed-tree.md",
+      " */",
+      "#line 4 \"data-structure-2d/dynamic-binary-indexed-tree-2d.hpp\"",
+      "",
+      "template <typename T>",
+      "struct DynamicFenwickTree2D {",
+      "  using BIT = DynamicFenwickTree<int, T>;",
+      "  int N, M;",
+      "  vector<BIT*> bit;",
+      "  DynamicFenwickTree2D() = default;",
+      "  DynamicFenwickTree2D(int n, int m) : N(n + 1), M(m) {",
+      "    for (int _ = 0; _ < N; ++_) bit.push_back(new BIT(M));",
+      "  }",
+      "  ",
+      "  void add(int i, int j, const T& x) {",
+      "    for (++i; i < N; i += i & -i) (*bit[i]).add(j, x);",
+      "  }",
+      "",
+      "  // i = [0, n), j = [0, m)",
+      "  T sum(int n, int m) const {",
+      "    if (n < 0 || m < 0) return T();",
+      "    T ret = T();",
+      "    for (; n; n -= n & -n) ret += (*bit[n]).sum(m);",
+      "    return ret;",
+      "  }",
+      "",
+      "  // i = [nl, nr), j = [ml, mr)",
+      "  T sum(int nl, int ml, int nr, int mr) const {",
+      "    T ret = T();",
+      "    while (nl != nr) {",
+      "      if (nl < nr) {",
+      "        ret += (*bit[nr]).sum(ml, mr);",
+      "        nr -= nr & -nr;",
+      "      } else {",
+      "        ret -= (*bit[nl]).sum(ml, mr);",
+      "        nl -= nl & -nl;",
+      "      }",
+      "    }",
+      "    return ret;",
+      "  }",
+      "};",
+      "",
+      "/*",
+      " * @brief 動的二次元Binary Indexed Tree",
+      " */"
+    ],
+    "description": "seg.dynamic_fenwick_bit_2d",
+    "scope": "cpp"
+  },
   "seg.lazy_segtree_add_sum": {
     "prefix": "lazy_segtree_add_sum",
     "body": [
-      "#define STRUCT_ID__ lseg1",
+      "#define STRUCT_ID__ Lseg1",
       "namespace mystd {",
       "    namespace STRUCT_ID__ {",
       "        // https://betrue12.hateblo.jp/entry/2020/09/23/005940",
@@ -23,14 +226,36 @@
       "}",
       "#undef STRUCT_ID__",
       "using namespace mystd;",
-      "// lseg1::It seg(vector<lseg1::S>(n,0));"
+      "// Lseg1::It seg(vector<Lseg1::S>(n,0));"
     ],
-    "description": "seg.lazy_segtree_add_sum"
+    "description": "seg.lazy_segtree_add_sum",
+    "scope": "cpp"
+  },
+  "seg.segtree_sum": {
+    "prefix": "segtree_sum",
+    "body": [
+      "#define STRUCT_ID__ Seg1",
+      "namespace mystd {",
+      "    namespace STRUCT_ID__ {",
+      "        using S = ll;",
+      "",
+      "        S op(S a, S b){ return a+b; }",
+      "        S e(){ return 0; }",
+      "",
+      "        using It = segtree<S,op,e>;",
+      "    }",
+      "}",
+      "#undef STRUCT_ID__",
+      "using namespace mystd;",
+      "// Seg1::It seg(vector<seg1::S>(n,0));"
+    ],
+    "description": "seg.segtree_sum",
+    "scope": "cpp"
   },
   "seg.lazy_segtree_add_max": {
     "prefix": "lazy_segtree_add_max",
     "body": [
-      "#define STRUCT_ID__ lseg1",
+      "#define STRUCT_ID__ Lseg1",
       "namespace mystd {",
       "    namespace STRUCT_ID__ {",
       "        // https://betrue12.hateblo.jp/entry/2020/09/23/005940",
@@ -48,9 +273,88 @@
       "}",
       "#undef STRUCT_ID__",
       "using namespace mystd;",
-      "// lseg1::It seg(vector<lseg1::S>(n,0));"
+      "// Lseg1::It seg(vector<Lseg1::S>(n,0));"
     ],
-    "description": "seg.lazy_segtree_add_max"
+    "description": "seg.lazy_segtree_add_max",
+    "scope": "cpp"
+  },
+  "ds.doubling_sum": {
+    "prefix": "doubling_sum",
+    "body": [
+      "#define STRUCT_ID__ Dbl1",
+      "namespace mystd {",
+      "    namespace STRUCT_ID__ {",
+      "        template <class S, auto op, auto e>",
+      "        struct Doubling {",
+      "            // https://github.com/atcoder/ac-library/blob/master/atcoder/segtree.hpp からひったくってきた",
+      "            static_assert(std::is_convertible_v<decltype(op), std::function<S(S, S)>>,",
+      "                          \"op must work as S(S, S)\");",
+      "            static_assert(std::is_convertible_v<decltype(e), std::function<S()>>,",
+      "                          \"e must work as S()\");",
+      "",
+      "            struct Result {",
+      "                int dest;",
+      "                S value;",
+      "            };",
+      "        ",
+      "            std::size_t size_;",
+      "            std::vector<std::vector<int>> dest_; // 遷移先",
+      "            std::vector<std::vector<S>> value_; // 集約値",
+      "        ",
+      "            template <typename T>",
+      "            explicit Doubling(const std::vector<T> dest) : Doubling(dest, std::vector<S>(dest.size(), e())) {}",
+      "        ",
+      "            template <typename T>",
+      "            explicit Doubling(const std::vector<T>& dest, const std::vector<S>& value)",
+      "                : size_(dest.size()) {",
+      "                assert(dest.size() == value.size());",
+      "                dest_ = std::vector<std::vector<int>>(62, std::vector<int>(size_, 0));",
+      "                value_ = std::vector<std::vector<S>>(62, std::vector<S>(size_, e()));",
+      "                ",
+      "                for (int i = 0; i < size_; i++) {",
+      "                    dest_[0][i] = static_cast<int>(dest[i]);",
+      "                    value_[0][i] = value[i];",
+      "                }",
+      "            ",
+      "                for (int k = 1; k < 62; k++) {",
+      "                    for (int i = 0; i < size_; i++) {",
+      "                        dest_[k][i] = dest_[k - 1][dest_[k - 1][i]];",
+      "                        value_[k][i] = op(value_[k - 1][i], value_[k - 1][dest_[k - 1][i]]);",
+      "                    }",
+      "                }",
+      "            }",
+      "        ",
+      "            Result query(int start, long long count) {",
+      "                int current = start;",
+      "                S answer = e();",
+      "            ",
+      "                for (int k = 0; k < 62; k++) {",
+      "                    if (!((count >> k) & 1)) continue;",
+      "                    answer = op(answer, value_[k][current]);",
+      "                    current = dest_[k][current];",
+      "                }",
+      "            ",
+      "                return {.dest = current, .value = answer};",
+      "            }",
+      "        };",
+      "",
+      "        using S = ll;",
+      "        S op(S a, S b) {",
+      "            return max(a,b);",
+      "        }",
+      "        S e() {",
+      "            return -INFLL;",
+      "        }",
+      "",
+      "        using It = Doubling<S,op,e>;",
+      "    }",
+      "}",
+      "#undef STRUCT_ID__",
+      "using namespace mystd;",
+      "// Dbl1::It dbl(vector<Dbl1::S>(n,0),vector<Dbl1::S>(n,0));"
+    ],
+    "description": "ds.doubling_sum",
+    "scope": "cpp"
   },
   "old.rolling_hash_on_segment_tree": {
     "prefix": "rolling_hash_on_segment_tree",
@@ -411,7 +715,8 @@
       "",
       "using RollingHashonSegmentTreeImpl::RollingHashonSegmentTree;"
     ],
-    "description": "old.rolling_hash_on_segment_tree"
+    "description": "old.rolling_hash_on_segment_tree",
+    "scope": "cpp"
   },
   "old.enumerate_groups": {
     "prefix": "enumerate_groups",
@@ -434,7 +739,8 @@
       "};",
       "dfs(0);"
     ],
-    "description": "old.enumerate_groups"
+    "description": "old.enumerate_groups",
+    "scope": "cpp"
   },
   "old.bitloop": {
     "prefix": "bitloop",
@@ -447,7 +753,8 @@
       "    }",
       "}"
     ],
-    "description": "old.bitloop"
+    "description": "old.bitloop",
+    "scope": "cpp"
   },
   "old.interval_set": {
     "prefix": "interval_set",
@@ -672,7 +979,8 @@
       "    }",
       "};"
     ],
-    "description": "old.interval_set"
+    "description": "old.interval_set",
+    "scope": "cpp"
   },
   "old.trie": {
     "prefix": "trie",
@@ -701,7 +1009,8 @@
       "    }",
       "}"
     ],
-    "description": "old.trie"
+    "description": "old.trie",
+    "scope": "cpp"
   },
   "old.read_char2d": {
     "prefix": "read_char2d",
@@ -714,7 +1023,8 @@
       "    }",
       "}"
     ],
-    "description": "old.read_char2d"
+    "description": "old.read_char2d",
+    "scope": "cpp"
   },
   "old.pqpair": {
     "prefix": "pqpair",
@@ -723,7 +1033,8 @@
       "    auto compare=[](PQV a,PQV b){return a.second>b.second;};",
       "    priority_queue<PQV,vector<PQV>,decltype(compare)> pq;"
     ],
-    "description": "old.pqpair"
+    "description": "old.pqpair",
+    "scope": "cpp"
   },
   "old.rooted_tree_lca": {
     "prefix": "rooted_tree_lca",
@@ -900,7 +1211,8 @@
       "    }",
       "};"
     ],
-    "description": "old.rooted_tree_lca"
+    "description": "old.rooted_tree_lca",
+    "scope": "cpp"
   },
   "old.ufp_llsum_union_find_potential": {
     "prefix": "ufp_llsum_union_find_potential",
@@ -972,27 +1284,8 @@
       "}",
       "//UnionFindWithPotential<S_ufp,op_ufp,e_ufp,inv_ufp> uf(n+1);"
     ],
-    "description": "old.ufp_llsum_union_find_potential"
-  },
-  "old.lazy_segtree_setonly": {
-    "prefix": "lazy_segtree_setonly",
-    "body": [
-      "//https://betrue12.hateblo.jp/entry/2020/09/22/194541",
-      "//区間更新only",
-      "using S = ll;",
-      "using F = ll;",
-      "const F ID = INFLL+1;",
-      "S op(S a, S b){ return a+b; }",
-      "S e(){ return 0; }",
-      "S mapping(F f, S x){",
-      "    if(f != ID) x = f;",
-      "    return x;",
-      "}",
-      "F composition(F f, F g){ return (f == ID ? g : f); }",
-      "F id(){ return ID; }",
-      "// lazy_segtree<S,op,e,F,mapping,composition,id> seg(n);"
-    ],
-    "description": "old.lazy_segtree_setonly"
+    "description": "old.ufp_llsum_union_find_potential",
+    "scope": "cpp"
   },
   "old.bitoperation": {
     "prefix": "bitoperation",
@@ -1011,7 +1304,8 @@
       "}",
       ""
     ],
-    "description": "old.bitoperation"
+    "description": "old.bitoperation",
+    "scope": "cpp"
   },
   "old.tyokkei": {
     "prefix": "tyokkei",
@@ -1036,7 +1330,8 @@
       "    return {farthest_v,farthest_dist};",
       "};"
     ],
-    "description": "old.tyokkei"
+    "description": "old.tyokkei",
+    "scope": "cpp"
   },
   "old.all_combinations_ncr": {
     "prefix": "all_combinations_ncr",
@@ -1067,7 +1362,8 @@
       "    return result;",
       "}"
     ],
-    "description": "old.all_combinations_ncr"
+    "description": "old.all_combinations_ncr",
+    "scope": "cpp"
   },
   "old.calc_divisors_yakusuu": {
     "prefix": "calc_divisors_yakusuu",
@@ -1083,7 +1379,8 @@
       "    return divisors;",
       "};"
     ],
-    "description": "old.calc_divisors_yakusuu"
+    "description": "old.calc_divisors_yakusuu",
+    "scope": "cpp"
   },
   "old.keta_digit_dp": {
     "prefix": "keta_digit_dp",
@@ -1103,7 +1400,8 @@
       "    return ans;",
       "};"
     ],
-    "description": "old.keta_digit_dp"
+    "description": "old.keta_digit_dp",
+    "scope": "cpp"
   },
   "old.mod_ncr_nikoukeisuu": {
     "prefix": "mod_ncr_nikoukeisuu",
@@ -1130,7 +1428,8 @@
       "    return fac[n] * finv[k] * finv[n - k];",
       "}"
     ],
-    "description": "old.mod_ncr_nikoukeisuu"
+    "description": "old.mod_ncr_nikoukeisuu",
+    "scope": "cpp"
   },
   "old.lrover": {
     "prefix": "lrover",
@@ -1144,7 +1443,8 @@
       "    return make_tuple(left,right,overcnt);",
       "};"
     ],
-    "description": "old.lrover"
+    "description": "old.lrover",
+    "scope": "cpp"
   },
   "old.cht_convex_hull_trick": {
     "prefix": "cht_convex_hull_trick",
@@ -1223,7 +1523,8 @@
       "    }",
       "};"
     ],
-    "description": "old.cht_convex_hull_trick"
+    "description": "old.cht_convex_hull_trick",
+    "scope": "cpp"
   },
   "old.tousa_suuretsu_seq_sum": {
     "prefix": "tousa_suuretsu_seq_sum",
@@ -1232,7 +1533,8 @@
       "auto seq_sum2=[&](ll a,ll l,ll n){if(a>l)return 0LL;return n*(a+l)/2;};//初項a 末項l 項数n",
       "auto seq_sum3=[&](ll a,ll d,ll l){if(a>l)return 0LL;ll n=(l-a)/d+1;return n*(2*a+(n-1)*d)/2;};//初項a 公差d 末項<=l"
     ],
-    "description": "old.tousa_suuretsu_seq_sum"
+    "description": "old.tousa_suuretsu_seq_sum",
+    "scope": "cpp"
   },
   "old.read_int2d": {
     "prefix": "read_int2d",
@@ -1240,7 +1542,8 @@
       "vector<vector<int>> P(h,vector<int>(w));",
       "rep(i,h)rep(j,w){int cin(p);P[i][j]=p;}"
     ],
-    "description": "old.read_int2d"
+    "description": "old.read_int2d",
+    "scope": "cpp"
   },
   "old.read_tree": {
     "prefix": "read_tree",
@@ -1252,7 +1555,8 @@
       "    G[v].push_back(u);",
       "}"
     ],
-    "description": "old.read_tree"
+    "description": "old.read_tree",
+    "scope": "cpp"
   },
   "old.modinv": {
     "prefix": "modinv",
@@ -1271,7 +1575,8 @@
       "\treturn u;",
       "}"
     ],
-    "description": "old.modinv"
+    "description": "old.modinv",
+    "scope": "cpp"
   },
   "old.ufp_matrixprod_union_find_potential": {
     "prefix": "ufp_matrixprod_union_find_potential",
@@ -1349,7 +1654,8 @@
       "}",
       "//UnionFindWithPotential<S_ufp,op_ufp,e_ufp,inv_ufp> uf(n+1);"
     ],
-    "description": "old.ufp_matrixprod_union_find_potential"
+    "description": "old.ufp_matrixprod_union_find_potential",
+    "scope": "cpp"
   },
   "old.segtree_sum": {
     "prefix": "segtree_sum",
@@ -1363,7 +1669,8 @@
       "}",
       "// segtree<S,op,e> seg(n);"
     ],
-    "description": "old.segtree_sum"
+    "description": "old.segtree_sum",
+    "scope": "cpp"
   },
   "old.walk2d": {
     "prefix": "walk2d",
@@ -1373,7 +1680,8 @@
       "    if(!within(0,c+dc,w-1))continue;",
       "}"
     ],
-    "description": "old.walk2d"
+    "description": "old.walk2d",
+    "scope": "cpp"
   },
   "old.rolling_hash_roriha": {
     "prefix": "rolling_hash_roriha",
@@ -1598,7 +1906,8 @@
       " * @docs docs/string/rolling-hash.md",
       " */"
     ],
-    "description": "old.rolling_hash_roriha"
+    "description": "old.rolling_hash_roriha",
+    "scope": "cpp"
   },
   "old.zaatu_coord_comp": {
     "prefix": "zaatu_coord_comp",
@@ -1608,21 +1917,21 @@
       "    void add(ll val) {",
       "        ve.push_back(val);",
       "    }",
-      "    map<ll,ll> comp() {",
+      "    map<ll,ll> comp(ll serial_begin=1) {",
       "        map<ll,ll> map;",
       "        sort(all(ve));",
       "        ve.erase(unique(all(ve)),ve.end());",
-      "        ll serial=1;",
+      "        ll serial=serial_begin;",
       "        for(auto v:ve){",
       "            map[v]=serial++;",
       "        }",
       "        return map;",
       "    }",
-      "    map<ll,pair<ll,ll>> comp_width() {",
+      "    map<ll,pair<ll,ll>> comp_width(ll serial_begin=1) {",
       "        map<ll,pair<ll,ll>> map;",
       "        sort(all(ve));",
       "        ve.erase(unique(all(ve)),ve.end());",
-      "        ll serial=1,n=ve.size();",
+      "        ll serial=serial_begin,n=ve.size();",
       "        rep(i,n-1){",
       "            map[ve[i]]={serial++,ve[i+1]-ve[i]};",
       "        }",
@@ -1631,7 +1940,8 @@
       "    }",
       "};"
     ],
-    "description": "old.zaatu_coord_comp"
+    "description": "old.zaatu_coord_comp",
+    "scope": "cpp"
   },
   "old.multi_testcases": {
     "prefix": "multi_testcases",
@@ -1640,7 +1950,8 @@
       "",
       "});"
     ],
-    "description": "old.multi_testcases"
+    "description": "old.multi_testcases",
+    "scope": "cpp"
   },
   "old.pow10": {
     "prefix": "pow10",
@@ -1665,7 +1976,8 @@
       "    return *(--pow10s.upper_bound(n));",
       "}"
     ],
-    "description": "old.pow10"
+    "description": "old.pow10",
+    "scope": "cpp"
   },
   "old.matrix": {
     "prefix": "matrix",
@@ -1889,7 +2201,8 @@
       " * @brief 行列ライブラリ",
       " */"
     ],
-    "description": "old.matrix"
+    "description": "old.matrix",
+    "scope": "cpp"
   },
   "old.prime_enumerate": {
     "prefix": "prime_enumerate",
@@ -1914,31 +2227,8 @@
       "  return ret;",
       "}"
     ],
-    "description": "old.prime_enumerate"
-  },
-  "old.lazy_segtree_set_sum": {
-    "prefix": "lazy_segtree_set_sum",
-    "body": [
-      "//https://betrue12.hateblo.jp/entry/2020/09/23/005940",
-      "struct S{",
-      "    long long value;",
-      "    int size;",
-      "};",
-      "using F = long long;",
-      "",
-      "const F ID = 8e18;",
-      "",
-      "S op(S a, S b){ return {a.value+b.value, a.size+b.size}; }",
-      "S e(){ return {0, 0}; }",
-      "S mapping(F f, S x){",
-      "    if(f != ID) x.value = f*x.size;",
-      "    return x;",
-      "}",
-      "F composition(F f, F g){ return (f == ID ? g : f); }",
-      "F id(){ return ID; }",
-      "// lazy_segtree<S,op,e,F,mapping,composition,id> seg(n);"
-    ],
-    "description": "old.lazy_segtree_set_sum"
+    "description": "old.prime_enumerate",
+    "scope": "cpp"
   },
   "old.segtree_minmax": {
     "prefix": "segtree_minmax",
@@ -1960,14 +2250,16 @@
       "// segtree<S_min,op_min,e_min> seg_min(n);",
       "// segtree<S_max,op_max,e_max> seg_max(n);"
     ],
-    "description": "old.segtree_minmax"
+    "description": "old.segtree_minmax",
+    "scope": "cpp"
   },
   "old.graph": {
     "prefix": "graph",
     "body": [
       "vector<vector<int>> G(n+1,vector<int>());"
     ],
-    "description": "old.graph"
+    "description": "old.graph",
+    "scope": "cpp"
   },
   "old.read_int1d": {
     "prefix": "read_int1d",
@@ -1975,7 +2267,8 @@
       "vector<int> A;",
       "rep(i,n){int cin(a);A.push_back(a);}"
     ],
-    "description": "old.read_int1d"
+    "description": "old.read_int1d",
+    "scope": "cpp"
   },
   "old.prime_factor_preprocess": {
     "prefix": "prime_factor_preprocess",
@@ -2012,14 +2305,16 @@
       "    }",
       "};"
     ],
-    "description": "old.prime_factor_preprocess"
+    "description": "old.prime_factor_preprocess",
+    "scope": "cpp"
   },
   "old.submission_url__edpc_v_subtree": {
     "prefix": "submission_url__edpc_v_subtree",
     "body": [
       "//https://atcoder.jp/contests/dp/submissions/71986376"
     ],
-    "description": "old.submission_url__edpc_v_subtree"
+    "description": "old.submission_url__edpc_v_subtree",
+    "scope": "cpp"
   },
   "old.prime_factor": {
     "prefix": "prime_factor",
@@ -2038,7 +2333,8 @@
       "    return primes;",
       "};"
     ],
-    "description": "old.prime_factor"
+    "description": "old.prime_factor",
+    "scope": "cpp"
   },
   "old.unordered_pair_tuple_vector": {
     "prefix": "unordered_pair_tuple_vector",
@@ -2093,7 +2389,8 @@
       "    using unordered_set = std::unordered_set<K,hash<K>>;",
       "}"
     ],
-    "description": "old.unordered_pair_tuple_vector"
+    "description": "old.unordered_pair_tuple_vector",
+    "scope": "cpp"
   },
   "old.euler_tour_inout": {
     "prefix": "euler_tour_inout",
@@ -2114,75 +2411,8 @@
       "    dfs(1,-1);",
       "}"
     ],
-    "description": "old.euler_tour_inout"
-  },
-  "old.doubling": {
-    "prefix": "doubling",
-    "body": [
-      "template <class S, auto op, auto e>",
-      "struct Doubling {",
-      "    // https://github.com/atcoder/ac-library/blob/master/atcoder/segtree.hpp からひったくってきた",
-      "    static_assert(std::is_convertible_v<decltype(op), std::function<S(S, S)>>,",
-      "                  \"op must work as S(S, S)\");",
-      "    static_assert(std::is_convertible_v<decltype(e), std::function<S()>>,",
-      "                  \"e must work as S()\");",
-      "    ",
-      "    struct Result {",
-      "        int dest;",
-      "        S value;",
-      "    };",
-      "",
-      "    std::size_t size_;",
-      "    std::vector<std::vector<int>> dest_; // 遷移先",
-      "    std::vector<std::vector<S>> value_; // 集約値",
-      "",
-      "    template <typename T>",
-      "    explicit Doubling(const std::vector<T> dest) : Doubling(dest, std::vector<S>(dest.size(), e())) {}",
-      "",
-      "    template <typename T>",
-      "    explicit Doubling(const std::vector<T>& dest, const std::vector<S>& value)",
-      "        : size_(dest.size()) {",
-      "        assert(dest.size() == value.size());",
-      "        dest_ = std::vector<std::vector<int>>(62, std::vector<int>(size_, 0));",
-      "        value_ = std::vector<std::vector<S>>(62, std::vector<S>(size_, e()));",
-      "        ",
-      "        for (int i = 0; i < size_; i++) {",
-      "            dest_[0][i] = static_cast<int>(dest[i]);",
-      "            value_[0][i] = value[i];",
-      "        }",
-      "",
-      "        for (int k = 1; k < 62; k++) {",
-      "            for (int i = 0; i < size_; i++) {",
-      "                dest_[k][i] = dest_[k - 1][dest_[k - 1][i]];",
-      "                value_[k][i] = op(value_[k - 1][i], value_[k - 1][dest_[k - 1][i]]);",
-      "            }",
-      "        }",
-      "    }",
-      "",
-      "    Result query(int start, long long count) {",
-      "        int current = start;",
-      "        S answer = e();",
-      "",
-      "        for (int k = 0; k < 62; k++) {",
-      "            if (!((count >> k) & 1)) continue;",
-      "            answer = op(answer, value_[k][current]);",
-      "            current = dest_[k][current];",
-      "        }",
-      "",
-      "        return {.dest = current, .value = answer};",
-      "    }",
-      "};",
-      "",
-      "using S_dbl = ll;",
-      "S_dbl op_dbl(S_dbl a, S_dbl b) {",
-      "    return a + b;",
-      "}",
-      "S_dbl e_dbl() {",
-      "    return 0;",
-      "}",
-      "//Doubling<S_dbl,op_dbl,e_dbl> db(B,A);"
-    ],
-    "description": "old.doubling"
+    "description": "old.euler_tour_inout",
+    "scope": "cpp"
   },
   "old.choose_ncr": {
     "prefix": "choose_ncr",
@@ -2191,6 +2421,7 @@
       "rep(i,1,200010){fact.push_back(fact[i-1]*i);}",
       "auto choose=[&](ll n,ll r){return fact[n]/(fact[r]*fact[n-r]);};"
     ],
-    "description": "old.choose_ncr"
+    "description": "old.choose_ncr",
+    "scope": "cpp"
   }
 }

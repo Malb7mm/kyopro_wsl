@@ -759,26 +759,6 @@ public:
 //                         //
 // *-*-*-*-*-*-*-*-*-*-*-* //
 
-#define STRUCT_ID__ lseg1
-namespace mystd {
-    namespace STRUCT_ID__ {
-        // https://betrue12.hateblo.jp/entry/2020/09/23/005940
-        using S = ll;
-        using F = ll;
-
-        S op(S a, S b){ return max(a, b); }
-        S e(){ return -INFLL; }
-        S mapping(F f, S x){ return f+x; }
-        F composition(F f, F g){ return f+g; }
-        F id(){ return 0; }
-
-        using It = lazy_segtree<S,op,e,F,mapping,composition,id>;
-    }
-}
-#undef STRUCT_ID__
-using namespace mystd;
-// lseg1::It seg(vector<lseg1::S>(n,0));
-
 //#define int ll
 
 //#pragma GCC target("avx")
@@ -791,23 +771,7 @@ using namespace mystd;
 #define HIDE_CERR false
 
 void solve() {
-    ll cin(n,q);
-    vector<ll> A(n);
-    rep(i,n)cin>>A[i];
-    seg1::It seg(A);
-    rep(i,q){
-        ll cin(t,l,r);l--;r--;
-        if(t==1){
-            auto L=seg.get(l);
-            auto R=seg.get(r);
-            seg.set(l,R);
-            seg.set(r,L);
-        }
-        if(t==2){
-            auto minv=seg.prod(l,r+1);
-            cout<<seg.max_right(l,[&](auto e){return e>minv;})+1<<el;
-        }
-    }
+
 }
 
 void naive() {
