@@ -1,0 +1,6 @@
+{
+  "tools": {
+    "sandbox": "docker"
+  },
+  "$version": 3
+}

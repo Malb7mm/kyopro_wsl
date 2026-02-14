@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>AHC061 Simulator mk2</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<h1>AHC061 Simulator mk2</h1>
+
+<div class="main-container">
+
+    <div style="width: 280px; display:flex; flex-direction:column; gap:10px;">
+        <div class="panel">
+            <h3>設定 / Settings</h3>
+            <div class="control-group">
+                <label>マップ生成タイプ</label>
+                <select id="map-type">
+                    <option value="simple">シンプル (値 1-10程度)</option>
+                    <option value="official" selected>公式準拠 (合計10万, 偏りあり)</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>プレイヤー数 (M)</label>
+                <select id="input-m">
+                    <option value="4" selected>4人</option>
+                    <option value="2">2人</option>
+                    <option value="3">3人</option>
+                    <option value="5">5人</option>
+                    <option value="6">6人</option>
+                    <option value="7">7人</option>
+                    <option value="8">8人</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>レベル上限 (U)</label>
+                <select id="input-u">
+                    <option value="5" selected>Lv.5</option>
+                    <option value="1">Lv.1</option>
+                    <option value="2">Lv.2</option>
+                    <option value="3">Lv.3</option>
+                    <option value="4">Lv.4</option>
+                </select>
+            </div>
+            <button class="action-btn" onclick="game.reset()">設定でリセット (New Game)</button>
+        </div>
+
+        <div class="panel">
+            <h3>入力インポート</h3>
+            <div class="control-group">
+                <textarea id="input-data" placeholder="問題の入力形式 (末尾のパラメータ含む)"></textarea>
+            </div>
+            <button class="secondary action-btn" onclick="game.loadInput()">入力を読み込む</button>
+        </div>
+
+        <div class="panel">
+            <h3>出力 / Export</h3>
+            <div class="control-group">
+                <textarea id="export-data" placeholder="ここに完全な入力データが出力されます" readonly></textarea>
+            </div>
+            <button class="secondary action-btn" onclick="game.exportInput()">現在の設定を出力</button>
+        </div>
+    </div>
+
+    <div>
+        <div id="board"></div>
+    </div>
+
+    <div style="width: 280px; display:flex; flex-direction:column; gap:10px;">
+
+        <div id="viz-panel" class="panel">
+            <h3>AI思考の推測 (Visualizer)</h3>
+            <div class="viz-desc">
+                対象CPUを選択すると、各マスの下部に評価値ゲージを表示します。
+            </div>
+
+            <div class="control-group">
+                <label>視覚化対象 (Target)</label>
+                <select id="viz-target" onchange="game.render()">
+                    <option value="-1">なし (OFF)</option>
+                </select>
+            </div>
+
+            <div class="cheat-box">
+                <label style="cursor:pointer; color:#333; font-weight:normal;">
+                    <input type="checkbox" id="show-ai-targets" onchange="game.render()"> 貪欲行動の予測 (Show Targets)
+                </label>
+                <label style="cursor:pointer;">
+                    <input type="checkbox" id="use-true-params" onchange="game.toggleTrueParams()"> 正解パラメータを使用 (Cheat)
+                </label>
+            </div>
+
+            <div id="slider-container" class="slider-container" style="background:#f9f9f9; padding:5px; border-radius:4px; margin-top:5px;">
+                <label style="font-size:11px; font-weight:bold; margin-bottom:5px; display:block;">推測パラメータ (0.3 - 1.0)</label>
+
+                <div class="slider-row">
+                    <div class="slider-label">wa<span class="slider-desc">無所属マス</span></div>
+                    <input type="range" min="0.3" max="1.0" step="0.05" value="0.65" id="p-wa" oninput="game.updateVizParams()">
+                    <span id="val-wa" class="slider-val">0.65</span>
+                </div>
+                <div class="slider-row">
+                    <div class="slider-label">wb<span class="slider-desc">自領土(Lv&lt;U)</span></div>
+                    <input type="range" min="0.3" max="1.0" step="0.05" value="0.65" id="p-wb" oninput="game.updateVizParams()">
+                    <span id="val-wb" class="slider-val">0.65</span>
+                </div>
+                <div class="slider-row">
+                    <div class="slider-label">wc<span class="slider-desc">敵領土(Lv1)</span></div>
+                    <input type="range" min="0.3" max="1.0" step="0.05" value="0.65" id="p-wc" oninput="game.updateVizParams()">
+                    <span id="val-wc" class="slider-val">0.65</span>
+                </div>
+                <div class="slider-row">
+                    <div class="slider-label">wd<span class="slider-desc">敵領土(Lv2+)</span></div>
+                    <input type="range" min="0.3" max="1.0" step="0.05" value="0.65" id="p-wd" oninput="game.updateVizParams()">
+                    <span id="val-wd" class="slider-val">0.65</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="info-panel" class="panel">
+            <h3>ステータス</h3>
+            <div class="stat-row"><span>Turn:</span> <span id="turn-display">0 / 100</span></div>
+            <div id="scores" style="margin-top:10px;"></div>
+            <div class="abs-score-box">
+                絶対スコア: <span id="abs-score" style="font-size:18px;">0</span>
+            </div>
+            <div id="log"></div>
+        </div>
+    </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
