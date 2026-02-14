@@ -9,6 +9,6 @@ namespace mystd {
         using It = segtree<S,op,e>;
     }
 }
+namespace STRUCT_ID__ = mystd::STRUCT_ID__;
 #undef STRUCT_ID__
-using namespace mystd;
 // Seg1::It seg(vector<seg1::S>(n,0));

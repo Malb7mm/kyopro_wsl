@@ -1,7 +1,6 @@
 #define STRUCT_ID__ Lseg1
 namespace mystd {
     namespace STRUCT_ID__ {
-        // https://betrue12.hateblo.jp/entry/2020/09/23/005940
         using S = ll;
         using F = ll;
 
@@ -14,6 +13,6 @@ namespace mystd {
         using It = lazy_segtree<S,op,e,F,mapping,composition,id>;
     }
 }
+namespace STRUCT_ID__ = mystd:: STRUCT_ID__ ;
 #undef STRUCT_ID__
-using namespace mystd;
 // Lseg1::It seg(vector<Lseg1::S>(n,0));

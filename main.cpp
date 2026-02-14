@@ -13,8 +13,6 @@ using namespace std;
 namespace atcoder {struct dsu {public:dsu() : _n(0) {}explicit dsu(int n) : _n(n), parent_or_size(n, -1) {}int merge(int a, int b) {assert(0 <= a && a < _n);assert(0 <= b && b < _n);int x = leader(a), y = leader(b);if (x == y) return x;if (-parent_or_size[x] < -parent_or_size[y]) std::swap(x, y);parent_or_size[x] += parent_or_size[y];parent_or_size[y] = x;return x;}bool same(int a, int b) {assert(0 <= a && a < _n);assert(0 <= b && b < _n);return leader(a) == leader(b);}int leader(int a) {assert(0 <= a && a < _n);return _leader(a);}int size(int a) {assert(0 <= a && a < _n);return -parent_or_size[leader(a)];}std::vector<std::vector<int>> groups() {std::vector<int> leader_buf(_n), group_size(_n);for (int i = 0; i < _n; i++) {leader_buf[i] = leader(i);group_size[leader_buf[i]]++;}std::vector<std::vector<int>> result(_n);for (int i = 0; i < _n; i++) {result[i].reserve(group_size[i]);}for (int i = 0; i < _n; i++) {result[leader_buf[i]].push_back(i);}result.erase(std::remove_if(result.begin(), result.end(),[&](const std::vector<int>& v) { return v.empty(); }),result.end());return result;}private:int _n;std::vector<int> parent_or_size;int _leader(int a) {if (parent_or_size[a] < 0) return a;return parent_or_size[a] = _leader(parent_or_size[a]);}};}
 #endif  // ATCODER_DSU_HPP
 
-
-
 namespace atcoder {}
 using namespace atcoder;
 #ifdef ATCODER
@@ -33,6 +31,23 @@ using mint = modint998244353;
 
 using ll = long long;
 using ull = unsigned long long;
+using pll = pair<ll,ll>;
+using pil = pair<int,ll>;
+using tll3 = tuple<ll,ll,ll>;
+using tll4 = tuple<ll,ll,ll,ll>;
+using tll5 = tuple<ll,ll,ll,ll,ll>;
+using tll6 = tuple<ll,ll,ll,ll,ll,ll>;
+using vll = vector<ll>;
+using vpll = vector<pll>;
+using vtll3 = vector<tll3>;
+using vtll4 = vector<tll4>;
+using vtll5 = vector<tll5>;
+using vtll6 = vector<tll6>;
+using vstr = vector<string>;
+using vvll = vector<vector<ll>>;
+using vvint = vector<vector<int>>;
+using vvpll = vector<vector<pll>>;
+using vvpil = vector<vector<pil>>;
 #define INF (1 << 30)
 #define INFL (1LL << 48)
 #define INFLL (1LL << 62)
@@ -91,6 +106,15 @@ using ull = unsigned long long;
 #endif
 #ifndef CPHEXT
 #define CPHEXT 0
+#endif
+#ifndef MODE
+#define MODE 0 // -2: test(check) -1: test(naive) 0:solve 1:naive 2:check 3:next_case 4:jikken
+#endif
+#ifndef SHOW_EVERY_TESTCASES
+#define SHOW_EVERY_TESTCASES false
+#endif
+#ifndef SHOW_CERR
+#define SHOW_CERR false
 #endif
 
 constexpr char el = '\n';
@@ -759,16 +783,9 @@ public:
 //                         //
 // *-*-*-*-*-*-*-*-*-*-*-* //
 
-//#define int ll
-
 //#pragma GCC target("avx")
 //#pragma GCC optimize("O3")
 //#pragma GCC optimize("unroll-loops")
-
-//(these will be ignored on online judge)
-#define MODE -1 // -2: test(check) -1: test(naive) 0:solve 1:naive 2:check 3:next_case 4:jikken
-#define SHOW_EVERY_TESTCASES false
-#define HIDE_CERR false
 
 void solve() {
 
@@ -795,7 +812,7 @@ signed main() {
     std::cin.tie(nullptr);
     cerr << boolalpha << fixed << setprecision(3);
     cout << fixed << setprecision(15);
-    stringstream dummy_cerr;if (LOCAL == 1 && CPHEXT == 0 && HIDE_CERR) {cerr.rdbuf(dummy_cerr.rdbuf());}if (LOCAL == 0 || CPHEXT == 1 || MODE >= 0) { if (LOCAL == 0 || CPHEXT == 1 || MODE == 0) solve();else if (MODE == 1) naive();else if (MODE == 2) check();else if (MODE == 4) jikken();else if (MODE == 3) {stringstream ss;CaseGenerator cg(ss);next_case(cg);cout << ss.str() << endl;}}else {string discarded_input;auto cin_rdbuf = cin.rdbuf();auto cout_rdbuf = cout.rdbuf();istream std_in(cin_rdbuf);ostream std_out(cout_rdbuf);stringstream ss_in;stringstream ss_out;cin.rdbuf(ss_in.rdbuf());cout.rdbuf(ss_out.rdbuf());stringstream ss_gen;CaseGenerator cg(ss_gen);auto clear_ss = [&](stringstream& ss){ss.str("");ss.clear(std::stringstream::goodbit);};auto read_ss = [&](stringstream& ss){auto result = ss.str();clear_ss(ss);return result;};auto generate = [&]{next_case(cg);ss_gen << endl;return read_ss(ss_gen);};std_out << "- Example of Generated Case:" << endl;std_out << generate() << endl;stringstream ans_solve_ss;string ans_solve;int i_target = 1;for (int i = 1;; i++) {auto testcase = generate();if (SHOW_EVERY_TESTCASES) {std_out << "- Case " << i << ":" << endl;std_out << testcase << endl;}ss_in << testcase;solve();ans_solve_ss << read_ss(ss_out);ans_solve = ans_solve_ss.str();clear_ss(ss_in);if (MODE == -1){stringstream ans_naive_ss;string ans_naive;ss_in << testcase;naive();ans_naive_ss << read_ss(ss_out);ans_naive = ans_naive_ss.str();clear_ss(ss_in);bool pass;while (true) {string s_solve, s_naive;ans_solve_ss >> s_solve;ans_naive_ss >> s_naive;if (s_solve != s_naive) {pass = false;break;}if (ans_solve_ss.eof() && ans_naive_ss.eof()) {pass = true;break;}else if (ans_solve_ss.eof() || ans_naive_ss.eof()) {pass = false;break;}}clear_ss(ans_solve_ss);clear_ss(ans_naive_ss);if (!pass) {std_out << "! Counterexample has Found:" << endl;std_out << testcase << endl;std_out << "- Answer of solve():" << endl;std_out << ans_solve << endl;std_out << "- Answer of naive():" << endl;std_out << ans_naive << endl;std_in >> discarded_input;std_out << endl;i--;continue;}}else if (MODE == -2) {stringstream out_check_ss;string out_check;ss_in << testcase << endl;ss_in << ans_solve;auto pass = check();out_check_ss << read_ss(ss_out);out_check = out_check_ss.str();clear_ss(ss_in);clear_ss(ans_solve_ss);clear_ss(out_check_ss);if (!pass) {std_out << "! Counterexample has Found:" << endl;std_out << testcase << endl;std_out << "- Answer of solve():" << endl;std_out << ans_solve << endl;std_out << "- Output of check():" << endl;std_out << out_check << endl;std_in >> discarded_input;std_out << endl;i--;continue;}}if (i == i_target) {std_out << "- " << i << " Cases Passed" << endl << endl;i_target *= 2;}}}
+    stringstream dummy_cerr;if (LOCAL == 1 && CPHEXT == 0 && !SHOW_CERR) {cerr.rdbuf(dummy_cerr.rdbuf());}if (LOCAL == 0 || CPHEXT == 1 || MODE >= 0) { if (LOCAL == 0 || CPHEXT == 1 || MODE == 0) solve();else if (MODE == 1) naive();else if (MODE == 2) check();else if (MODE == 4) jikken();else if (MODE == 3) {stringstream ss;CaseGenerator cg(ss);next_case(cg);cout << ss.str() << endl;}}else {string discarded_input;auto cin_rdbuf = cin.rdbuf();auto cout_rdbuf = cout.rdbuf();istream std_in(cin_rdbuf);ostream std_out(cout_rdbuf);stringstream ss_in;stringstream ss_out;cin.rdbuf(ss_in.rdbuf());cout.rdbuf(ss_out.rdbuf());stringstream ss_gen;CaseGenerator cg(ss_gen);auto clear_ss = [&](stringstream& ss){ss.str("");ss.clear(std::stringstream::goodbit);};auto read_ss = [&](stringstream& ss){auto result = ss.str();clear_ss(ss);return result;};auto generate = [&]{next_case(cg);ss_gen << endl;return read_ss(ss_gen);};std_out << "- Example of Generated Case:" << endl;std_out << generate() << endl;stringstream ans_solve_ss;string ans_solve;int i_target = 1;for (int i = 1;; i++) {auto testcase = generate();if (SHOW_EVERY_TESTCASES) {std_out << "- Case " << i << ":" << endl;std_out << testcase << endl;}ss_in << testcase;solve();ans_solve_ss << read_ss(ss_out);ans_solve = ans_solve_ss.str();clear_ss(ss_in);if (MODE == -1){stringstream ans_naive_ss;string ans_naive;ss_in << testcase;naive();ans_naive_ss << read_ss(ss_out);ans_naive = ans_naive_ss.str();clear_ss(ss_in);bool pass;while (true) {string s_solve, s_naive;ans_solve_ss >> s_solve;ans_naive_ss >> s_naive;if (s_solve != s_naive) {pass = false;break;}if (ans_solve_ss.eof() && ans_naive_ss.eof()) {pass = true;break;}else if (ans_solve_ss.eof() || ans_naive_ss.eof()) {pass = false;break;}}clear_ss(ans_solve_ss);clear_ss(ans_naive_ss);if (!pass) {std_out << "! Counterexample has Found:" << endl;std_out << testcase << endl;std_out << "- Answer of solve():" << endl;std_out << ans_solve << endl;std_out << "- Answer of naive():" << endl;std_out << ans_naive << endl;std_in >> discarded_input;std_out << endl;i--;continue;}}else if (MODE == -2) {stringstream out_check_ss;string out_check;ss_in << testcase << endl;ss_in << ans_solve;auto pass = check();out_check_ss << read_ss(ss_out);out_check = out_check_ss.str();clear_ss(ss_in);clear_ss(ans_solve_ss);clear_ss(out_check_ss);if (!pass) {std_out << "! Counterexample has Found:" << endl;std_out << testcase << endl;std_out << "- Answer of solve():" << endl;std_out << ans_solve << endl;std_out << "- Output of check():" << endl;std_out << out_check << endl;std_in >> discarded_input;std_out << endl;i--;continue;}}if (i == i_target) {std_out << "- " << i << " Cases Passed" << endl << endl;i_target *= 2;}}}
 }
 
 // modの取り忘れがないか？

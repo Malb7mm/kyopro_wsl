@@ -66,6 +66,6 @@ namespace mystd {
         using It = Doubling<S,op,e>;
     }
 }
+namespace STRUCT_ID__ = mystd:: STRUCT_ID__ ;
 #undef STRUCT_ID__
-using namespace mystd;
 // Dbl1::It dbl(vector<Dbl1::S>(n,0),vector<Dbl1::S>(n,0));
