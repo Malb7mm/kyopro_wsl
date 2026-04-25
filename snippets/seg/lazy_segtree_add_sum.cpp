@@ -18,4 +18,4 @@ namespace mystd {
 }
 namespace STRUCT_ID__ = mystd:: STRUCT_ID__ ;
 #undef STRUCT_ID__
-// Lseg1::It seg(vector<Lseg1::S>(n,0));
+// Lseg1::It seg(vector<Lseg1::S>(n,{0,1}));

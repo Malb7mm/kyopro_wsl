@@ -20,6 +20,6 @@ for arg in "$@"; do
       ;;
   esac
 done
-g++ main.cpp -std=gnu++23 -DLOCAL -DATCODER -DMODE=$MODE_VAL $EXTRA_FLAGS -o main
+g++ main.cpp -std=gnu++23 -O2 -DLOCAL -DATCODER -DMODE=$MODE_VAL $EXTRA_FLAGS -o main
 echo "Compile finished. (MODE: $MODE_VAL)" >&2
 ./main

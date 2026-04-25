@@ -18,19 +18,173 @@ body { font-family: "Helvetica Neue", Arial, sans-serif; background: #f8f9fa; co
             display: grid; grid-template-columns: repeat(10, 50px);
             grid-gap: 2px; background: #d1d8df; padding: 4px;
             border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            position: relative;
         }
         .cell {
             width: 50px; height: 50px; background: #f8f9fa;
             display: flex; flex-direction: column; justify-content: flex-start; align-items: center;
             font-size: 11px; position: relative; cursor: default;
-            transition: all 0.1s; overflow: hidden;
+            transition: all 0.1s;
         }
         .cell.reachable { cursor: pointer; box-shadow: inset 0 0 0 3px #f1c40f !important; z-index: 10; }
         .cell.reachable:hover { transform: scale(1.05); z-index: 11; }
 
+        .attack-indicator {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            box-shadow: 0 0 0 3px rgba(255, 0, 0, 0.7);
+            transform: scale(0.95);
+            z-index: 15;
+            pointer-events: none;
+            display: none;
+        }
+
+        .move-success-indicator {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            box-shadow: 0 0 0 3px rgba(0, 255, 0, 0.7);
+            transform: scale(0.95);
+            z-index: 15;
+            pointer-events: none;
+            display: none;
+        }
+
+        .move-failure-indicator {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            box-shadow: 0 0 0 3px rgba(255, 255, 0, 0.7);
+            transform: scale(0.95);
+            z-index: 15;
+            pointer-events: none;
+            display: none;
+        }
+
+        .move-attack-success-indicator {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            box-shadow: 0 0 0 3px rgba(144, 238, 144, 0.7); /* 黄緑色 */
+            transform: scale(0.95);
+            z-index: 15;
+            pointer-events: none;
+            display: none;
+        }
+
+        .defense-attack-indicator {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            box-shadow: 0 0 0 3px rgba(255, 165, 0, 0.7); /* 橙色 */
+            transform: scale(0.95);
+            z-index: 15;
+            pointer-events: none;
+            display: none;
+        }
+
+        .attack-indicator.active,
+        .move-success-indicator.active,
+        .move-failure-indicator.active,
+        .move-attack-success-indicator.active,
+        .defense-attack-indicator.active {
+            display: block;
+        }
+
+        .indicator-animation {
+            animation: indicatorAnimation 0.8s ease-in-out;
+        }
+
+        .move-success-indicator-animation {
+            animation: moveSuccessIndicatorAnimation 0.8s ease-in-out;
+        }
+
+        .move-failure-indicator-animation {
+            animation: moveFailureIndicatorAnimation 0.8s ease-in-out;
+        }
+
+        .move-attack-success-indicator-animation {
+            animation: moveAttackSuccessIndicatorAnimation 0.8s ease-in-out;
+        }
+
+        .defense-attack-indicator-animation {
+            animation: defenseAttackIndicatorAnimation 0.8s ease-in-out;
+        }
+
+        @keyframes indicatorAnimation {
+            0% { transform: scale(1); box-shadow: 0 0 0 0px rgba(0, 0, 0, 0); }
+            25% { transform: scale(0.95); box-shadow: 0 0 0 3px rgba(255, 0, 0, 0.7); }
+            50% { transform: scale(1); box-shadow: 0 0 0 6px rgba(255, 0, 0, 0.5); }
+            75% { transform: scale(0.95); box-shadow: 0 0 0 3px rgba(255, 0, 0, 0.7); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 3px rgba(255, 0, 0, 0.7); }
+        }
+
+        @keyframes moveSuccessIndicatorAnimation {
+            0% { transform: scale(1); box-shadow: 0 0 0 0px rgba(0, 0, 0, 0); }
+            25% { transform: scale(0.95); box-shadow: 0 0 0 3px rgba(0, 255, 145, 0.7); }
+            50% { transform: scale(1); box-shadow: 0 0 0 6px rgba(0, 255, 145, 0.5); }
+            75% { transform: scale(0.95); box-shadow: 0 0 0 3px rgba(0, 255, 145, 0.7); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 3px rgba(0, 255, 145, 0.7); }
+        }
+
+        @keyframes moveFailureIndicatorAnimation {
+            0% { transform: scale(1); box-shadow: 0 0 0 0px rgba(0, 0, 0, 0); }
+            25% { transform: scale(0.95); box-shadow: 0 0 0 3px rgba(255, 248, 56, 0.7); }
+            50% { transform: scale(1); box-shadow: 0 0 0 6px rgba(255, 248, 56, 0.5); }
+            75% { transform: scale(0.95); box-shadow: 0 0 0 3px rgba(255, 248, 56, 0.7); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 3px rgba(255, 248, 56, 0.7); }
+        }
+
+        @keyframes moveAttackSuccessIndicatorAnimation {
+            0% { transform: scale(1); box-shadow: 0 0 0 0px rgba(0, 0, 0, 0); }
+            25% { transform: scale(0.95); box-shadow: 0 0 0 3px rgba(174, 255, 69, 0.7); }
+            50% { transform: scale(1); box-shadow: 0 0 0 6px rgba(174, 255, 69, 0.5); }
+            75% { transform: scale(0.95); box-shadow: 0 0 0 3px rgba(174, 255, 69, 0.7); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 3px rgba(174, 255, 69, 0.7); }
+        }
+
+        @keyframes defenseAttackIndicatorAnimation {
+            0% { transform: scale(1); box-shadow: 0 0 0 0px rgba(0, 0, 0, 0); }
+            25% { transform: scale(0.95); box-shadow: 0 0 0 3px rgba(255, 165, 0, 0.7); }
+            50% { transform: scale(1); box-shadow: 0 0 0 6px rgba(255, 165, 0, 0.5); }
+            75% { transform: scale(0.95); box-shadow: 0 0 0 3px rgba(255, 165, 0, 0.7); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 3px rgba(255, 165, 0, 0.7); }
+        }
+
+        @keyframes attackedAnimation {
+            0% { transform: scale(1); box-shadow: 0 0 0 0px rgba(255, 0, 0, 0.7); }
+            25% { transform: scale(0.95); box-shadow: 0 0 0 3px rgba(255, 0, 0, 0.7); }
+            50% { transform: scale(1); box-shadow: 0 0 0 6px rgba(255, 0, 0, 0.5); }
+            75% { transform: scale(0.95); box-shadow: 0 0 0 3px rgba(255, 0, 0, 0.7); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 3px rgba(255, 0, 0, 0.7); }
+        }
+
         .cell-info { height: 36px; display: flex; flex-direction: column; justify-content: center; align-items: center; width: 100%; }
         .val { font-weight: bold; color: #212529; font-size: 13px; pointer-events: none; z-index: 2; }
+        #board.show-contribution-rank .val.contribution-1 { color: #d32f2f; text-shadow: -1px -1px 0 #ffffff, 1px -1px 0 #ffffff, -1px 1px 0 #ffffff, 1px 1px 0 #ffffff; } /* 赤 - 1位 + 白縁取り */
+        #board.show-contribution-rank .val.contribution-2 { color: #e64a19; text-shadow: -1px -1px 0 #ffffff, 1px -1px 0 #ffffff, -1px 1px 0 #ffffff, 1px 1px 0 #ffffff; } /* 濃いオレンジ - 2位 + 白縁取り */
+        #board.show-contribution-rank .val.contribution-3 { color: #f57c00; text-shadow: -1px -1px 0 #ffffff, 1px -1px 0 #ffffff, -1px 1px 0 #ffffff, 1px 1px 0 #ffffff; } /* オレンジ - 3位 + 白縁取り */
+        #board.show-contribution-rank .val.contribution-4 { color: #ff8f00; text-shadow: -1px -1px 0 #000000, 1px -1px 0 #000000, -1px 1px 0 #000000, 1px 1px 0 #000000; } /* 明るいオレンジ - 4位 + 黒縁取り */
+        #board.show-contribution-rank .val.contribution-5 { color: #ffab00; text-shadow: -1px -1px 0 #000000, 1px -1px 0 #000000, -1px 1px 0 #000000, 1px 1px 0 #000000; } /* アンバー - 5位 + 黒縁取り */
+        #board.show-contribution-rank .val.contribution-6 { color: #ffc107; text-shadow: -1px -1px 0 #000000, 1px -1px 0 #000000, -1px 1px 0 #000000, 1px 1px 0 #000000; } /* 明るいアンバー - 6位 + 黒縁取り */
+        #board.show-contribution-rank .val.contribution-7 { color: #ffd54f; text-shadow: -1px -1px 0 #000000, 1px -1px 0 #000000, -1px 1px 0 #000000, 1px 1px 0 #000000; } /* ライトアンバー - 7位 + 黒縁取り */
+        #board.show-contribution-rank .val.contribution-8 { color: #ffdf7e; text-shadow: -1px -1px 0 #000000, 1px -1px 0 #000000, -1px 1px 0 #000000, 1px 1px 0 #000000; } /* ライトイエロー - 8位 + 黒縁取り */
+        #board.show-contribution-rank .val.contribution-9 { color: #ffe599; text-shadow: -1px -1px 0 #000000, 1px -1px 0 #000000, -1px 1px 0 #000000, 1px 1px 0 #000000; } /* パレートイエロー - 9位 + 黒縁取り */
+        #board.show-contribution-rank .val.contribution-10 { color: #ffecb3; text-shadow: -1px -1px 0 #000000, 1px -1px 0 #000000, -1px 1px 0 #000000, 1px 1px 0 #000000; } /* ライトイエロー - 10位 + 黒縁取り */
         .lvl { font-size: 10px; color: #495057; margin-top: -2px; pointer-events: none; z-index: 2; }
+        .lvl.lv1 { color: #009307; font-weight: bold; text-shadow: 0 0 3px white; } /* 濃い緑色 + 太字 */
+        .lvl.max-lv { color: #d32f2f; font-weight: bold; text-shadow: 0 0 3px white; } /* 赤色 + 太字 */
 
         .cell-viz {
             position: absolute; bottom: 0; left: 0; width: 100%; height: 14px;
@@ -66,8 +220,36 @@ body { font-family: "Helvetica Neue", Arial, sans-serif; background: #f8f9fa; co
             width: 2px; height: 2px; background: currentColor;
         }
 
+        .algo-prediction-marker {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 16px;
+            font-weight: bold;
+            color: #ff6b35; /* オレンジ色 */
+            text-shadow: 0 0 2px rgba(255, 255, 255, 0.8), 0 0 4px rgba(0, 0, 0, 0.5);
+            z-index: 20; /* 他の要素より前面に表示 */
+            pointer-events: none; /* イベントを透過 */
+        }
+
         #info-panel { width: 260px; }
         .stat-row { display: flex; justify-content: space-between; margin-bottom: 6px; border-bottom: 1px solid #e9ecef; padding-bottom: 2px; font-size: 14px; }
+        #status-panel .player-score { font-size: 12px; }
+        #status-panel #turn-display { font-size: 12px; }
+        .score-first { color: #d4af37 !important; } /* 金 */
+        .score-second { color: #979797 !important; } /* 銀 */
+        .score-third { color: #cd7f32 !important; } /* 銅 */
+
+        .param-container { margin-bottom: 10px; padding: 5px; border: 1px solid #dee2e6; border-radius: 4px; }
+        .param-header { font-weight: bold; margin-bottom: 5px; }
+        .param-bars { display: flex; height: 20px; margin-bottom: 5px; }
+        .param-bar { height: 100%; }
+        .param-bar.wa { background-color: #aeb7bb; }
+        .param-bar.wb { background-color: #57a8ff; }
+        .param-bar.wc { background-color: #ff6868; }
+        .param-bar.wd { background-color: #ed1111; }
+        .param-epsilon { font-size: 12px; }
         .abs-score-box { background: #d1f0e9; border: 1px solid #20c997; color: #157347; padding: 8px; text-align: center; border-radius: 4px; margin-top: 10px; font-weight: bold; }
         #log { margin-top: 10px; height: 150px; overflow-y: auto; font-size: 11px; border: 1px solid #dee2e6; padding: 5px; background: #f8f9fa; font-family: monospace; }
 

@@ -1,8 +1,7 @@
-// template reference: https://qiita.com/sorachandu/items/041169d34b9f9b99bcf7
-// solve() is around line 770
+// solve() is around line 660
 
 //for library checker/yukicoder
-#define ATCODER 1
+//#define ATCODER 1
 
 #include <bits/stdc++.h>
 using namespace std;
@@ -25,12 +24,15 @@ using namespace atcoder;
 #include <atcoder/string>
 #include <atcoder/scc>
 #include <atcoder/mincostflow>
+#include <atcoder/maxflow>
 using mint10 = modint1000000007;
 using mint = modint998244353;
 #endif
 
 using ll = long long;
 using ull = unsigned long long;
+using i128 = __int128_t;
+using ui128 = __uint128_t;
 using pll = pair<ll,ll>;
 using pil = pair<int,ll>;
 using tll3 = tuple<ll,ll,ll>;
@@ -43,16 +45,21 @@ using vtll3 = vector<tll3>;
 using vtll4 = vector<tll4>;
 using vtll5 = vector<tll5>;
 using vtll6 = vector<tll6>;
+using vi128 = vector<i128>;
+using sll = set<ll>;
 using vstr = vector<string>;
+using vbool = vector<bool>;
 using vvll = vector<vector<ll>>;
 using vvint = vector<vector<int>>;
 using vvpll = vector<vector<pll>>;
 using vvpil = vector<vector<pil>>;
-#define INF (1 << 30)
-#define INFL (1LL << 48)
-#define INFLL (1LL << 62)
-#define LL18 (1000000000000000000LL)
-#define LL9 (1000000000LL)
+constexpr int INF = 1 << 30;
+constexpr ll INFL = 1LL << 48;
+constexpr ll INFLL = 1LL << 62;
+constexpr ll LL18 = 1000000000000000000LL;
+constexpr ll LL9 = 1000000000LL;
+constexpr char el = '\n';
+constexpr char sp = ' ';
 
 #define walk2(dr, dc) for (auto [dr, dc] : vector<pair<int, int>>{{1, 0}, {0, 1}, {-1, 0}, {0, -1}})
 #define walk3(dr, dc, i) for (auto [dr, dc, i] : vector<tuple<int, int, int>>{{1, 0, 0}, {0, 1, 1}, {-1, 0, 2}, {0, -1, 3}})
@@ -117,14 +124,11 @@ using vvpil = vector<vector<pil>>;
 #define SHOW_CERR false
 #endif
 
-constexpr char el = '\n';
-constexpr char sp = ' ';
-
-#include<ext/pb_ds/assoc_container.hpp>
-#include<ext/pb_ds/tree_policy.hpp>
-#include<ext/pb_ds/tag_and_trait.hpp>
+#include <ext/pb_ds/assoc_container.hpp>
+#include <ext/pb_ds/tree_policy.hpp>
+#include <ext/pb_ds/tag_and_trait.hpp>
 using namespace __gnu_pbds;
-template<typename T,typename comp=less<T>>
+template <typename T,typename comp=less<T>>
 using indexed_set = tree<T, null_type, comp, rb_tree_tag, tree_order_statistics_node_update>;
 
 template<typename T,typename T2>
@@ -139,40 +143,6 @@ auto Vec(T init, int n, Args... args) {
     }
 }
 
-template <typename T, typename = void>
-struct is_tuple_like : std::false_type {};
-template <typename T>
-struct is_tuple_like<T, std::void_t<decltype(std::tuple_size<T>::value)>> : std::true_type {};
-template<typename T>
-void read_element(T& val) {
-    if constexpr (is_tuple_like<T>::value) {
-        std::apply([](auto&... args) {
-            (read_element(args), ...);
-        }, val);
-    } else {
-        std::cin >> val;
-    }
-}
-template<typename T>
-inline vector<T> vread(int n, int offset = 0) {
-    vector<T> result(n + offset);
-    for (int i = 0; i < n; i++) {
-        read_element(result[i + offset]);
-    }
-    return result;
-}
-template<typename T>
-inline vector<vector<T>> vread2d(int h, int w, int offset = 0, int offset2 = -1) {
-    if (offset2 == -1) offset2 = offset;
-    vector<vector<T>> result(h + offset, vector<T>(w + offset2));
-    for (int i = 0; i < h; i++) {
-        for (int j = 0; j < w; j++) {
-            read_element(result[i + offset][j + offset2]);
-        }
-    }
-    return result;
-}
-
 std::ostream& operator<<(std::ostream& os, __uint128_t n) {
     if (n == 0) return os << "0";
     std::string s;
@@ -182,14 +152,6 @@ std::ostream& operator<<(std::ostream& os, __uint128_t n) {
     }
     std::reverse(s.begin(), s.end());
     return os << s;
-}
-std::ostream& operator<<(std::ostream& os, __int128_t n) {
-    if (n == 0) return os << "0";
-    if (n < 0) {
-        os << "-";
-        n = -n;
-    }
-    return os << (__uint128_t)n;
 }
 std::istream& operator>>(std::istream& is, __int128_t& n) {
     std::string s;
@@ -209,6 +171,33 @@ std::istream& operator>>(std::istream& is, __uint128_t& n) {
     n = 0;
     for (size_t i = 0; i < s.size(); i++) {
         n = n * 10 + (s[i] - '0');
+    }
+    return is;
+}
+std::ostream& operator<<(std::ostream& os, __int128_t n) {
+    if (n == 0) return os << "0";
+    if (n < 0) {
+        os << "-";
+        n = -n;
+    }
+    return os << (__uint128_t)n;
+}
+template <typename T1, typename T2>
+istream& operator>>(istream& is, pair<T1, T2>& p) {
+    is >> p.first >> p.second;
+    return is;
+}
+template <typename... Args>
+istream& operator>>(istream& is, tuple<Args...>& t) {
+    apply([&is](auto&... args) {
+        ((is >> args), ...);
+    }, t);
+    return is;
+}
+template <typename T>
+istream& operator>>(istream& is, vector<T>& v) {
+    for (T& in : v) {
+        is >> in;
     }
     return is;
 }
@@ -319,117 +308,133 @@ void multicases(function<void()> f) {
     }
 }
 
-template <typename T>
-struct ofable {
-    T val;
-    bool is_overflow;
+namespace GodIter {
+    template <typename C>
+    concept Erasable = requires(C container, std::ranges::iterator_t<C> iterator) {
+        { container.erase(iterator) } -> std::bidirectional_iterator;
+    };
 
-    constexpr ofable() : val(0), is_overflow(false) {}
-    constexpr ofable(T v) : val(v), is_overflow(false) {}
-    constexpr ofable(T v, bool o) : val(o ? 0 : v), is_overflow(o) {}
-    constexpr explicit operator T() const { return val; }
+    template <typename C, typename V>
+    concept BoundMethod = requires(C container, V value) {
+        { container.lower_bound(value) } -> std::bidirectional_iterator;
+        { container.upper_bound(value) } -> std::bidirectional_iterator;
+    };
 
-    constexpr ofable<T>& operator+=(const ofable<T>& rhs) {
-        if (is_overflow || rhs.is_overflow) {
-            is_overflow = true; val = 0;
-        } else {
-            if (__builtin_add_overflow(val, rhs.val, &val)) {
-                val = 0; is_overflow = true;
+    template <typename C, typename V>
+    concept BoundStd = requires(C container, V value) {
+        { std::lower_bound(std::ranges::begin(container), std::ranges::end(container), value) } -> std::bidirectional_iterator;
+        { std::upper_bound(std::ranges::begin(container), std::ranges::end(container), value) } -> std::bidirectional_iterator;
+    };
+
+    template <typename C>
+    concept GodIterTarget = std::ranges::bidirectional_range<C> && Erasable<C>;
+
+    template <typename C, typename V>
+    concept BoundAny = BoundMethod<C, V> || BoundStd<C, V>;
+
+    template<typename C, typename V>
+    auto lower_bound(C& container, const V& value) {
+        if constexpr (BoundMethod<C, V>) return container.lower_bound(value);
+        else return std::lower_bound(std::ranges::begin(container), std::ranges::end(container), value);
+    }
+
+    template<typename C, typename V>
+    auto upper_bound(C& container, const V& value) {
+        if constexpr (BoundMethod<C, V>) return container.upper_bound(value);
+        else return std::upper_bound(std::ranges::begin(container), std::ranges::end(container), value);
+    }
+
+    template <typename TContainer, typename TValue>
+    requires std::ranges::bidirectional_range<TContainer> && Erasable<TContainer>
+    class GodIter {
+        using Iterator = std::ranges::iterator_t<TContainer>;
+        static constexpr int INF = 1 << 30;
+        TContainer& container;
+        Iterator it;
+        bool reverse_direction;
+        int begin_index;
+        int end_index;
+        int current_index;
+        bool erase_flag;
+
+        void update_bounding() {
+            if (it == std::ranges::begin(container) && begin_index == -INF) {
+                begin_index = current_index;
+            }
+            if (it == std::ranges::end(container) && end_index == INF) {
+                end_index = current_index - 1;
             }
         }
-        return *this;
-    }
-    constexpr ofable<T>& operator-=(const ofable<T>& rhs) {
-        if (is_overflow || rhs.is_overflow) {
-            is_overflow = true; val = 0;
-        } else {
-            if (__builtin_sub_overflow(val, rhs.val, &val)) {
-                val = 0; is_overflow = true;
+        void next() {
+            if (!(it == std::ranges::end(container))) {
+                if (erase_flag) it = container.erase(it);
+                else it++;
             }
+            erase_flag = false;
+            current_index++;
+            update_bounding();
         }
-        return *this;
-    }
-    constexpr ofable<T>& operator*=(const ofable<T>& rhs) {
-        if (is_overflow || rhs.is_overflow) {
-            is_overflow = true; val = 0;
-        } else {
-            if (__builtin_mul_overflow(val, rhs.val, &val)) {
-                val = 0; is_overflow = true;
+        void prev() {
+            if (erase_flag && !(it == std::ranges::end(container))) {
+                it = container.erase(it);
             }
-        }
-        return *this;
-    }
-    constexpr ofable<T>& operator/=(const ofable<T>& rhs) {
-        if (is_overflow || rhs.is_overflow) {
-            is_overflow = true; val = 0;
-            return *this;
-        }
-        if (val == std::numeric_limits<T>::min() && rhs.val == -1) {
-            is_overflow = true; val = 0;
-        } else {
-            val /= rhs.val;
-        }
-        return *this;
-    }
-    constexpr ofable<T>& operator<<=(int shift) {
-        if (is_overflow) return *this;
-        if (shift < 0) {
-            is_overflow = true; val = 0; return *this;
-        }
-        if (val == 0) return *this;
-
-        T max_val = std::numeric_limits<T>::max();
-        T min_val = std::numeric_limits<T>::min();
-
-        if (shift >= std::numeric_limits<T>::digits + 1) {
-             is_overflow = true; val = 0;
-        } else {
-            if (val > 0) {
-                if (val > (max_val >> shift)) { is_overflow = true; val = 0; }
-                else val <<= shift;
-            } else {
-                if (val < (min_val >> shift)) { is_overflow = true; val = 0; }
-                else val <<= shift;
+            if (!(it == std::ranges::begin(container))) {
+                it--;
             }
+            erase_flag = false;
+            current_index--;
+            update_bounding();
         }
-        return *this;
+
+    public:
+        GodIter(TContainer& container, Iterator it, bool reverse_direction)
+          : container(container),
+            it(it),
+            reverse_direction(reverse_direction),
+            begin_index(-INF),
+            end_index(INF),
+            current_index(0),
+            erase_flag(false)
+        {
+            update_bounding();
+        }
+
+        operator TValue() const { return *it; }
+        TValue val() const { return *it; }
+        bool valid() { return begin_index <= current_index && current_index <= end_index; }
+        void erase() { if (valid()) erase_flag = true; }
+        void forward() { reverse_direction ? prev() : next(); }
+        void backward() { reverse_direction ? next() : prev(); }
+    };
+
+    template <typename C, typename V>
+    requires GodIterTarget<C> && BoundAny<C, V>
+    GodIter<C, V> gte(C& container, const V& value) {
+        return GodIter<C, V>(container, lower_bound(container, value), false);
     }
 
-    constexpr ofable<T>& operator>>=(int shift) {
-        if (is_overflow) return *this;
-        val >>= shift;
-        return *this;
+    template <typename C, typename V>
+    requires GodIterTarget<C> && BoundAny<C, V>
+    GodIter<C, V> gt(C& container, const V& value) {
+        return GodIter<C, V>(container, upper_bound(container, value), false);
     }
 
-    friend constexpr ofable<T> operator+(ofable<T> lhs, const ofable<T>& rhs) { return lhs += rhs; }
-    friend constexpr ofable<T> operator-(ofable<T> lhs, const ofable<T>& rhs) { return lhs -= rhs; }
-    friend constexpr ofable<T> operator*(ofable<T> lhs, const ofable<T>& rhs) { return lhs *= rhs; }
-    friend constexpr ofable<T> operator/(ofable<T> lhs, const ofable<T>& rhs) { return lhs /= rhs; }
-    friend constexpr ofable<T> operator<<(ofable<T> lhs, int shift) { return lhs <<= shift; }
-    friend constexpr ofable<T> operator>>(ofable<T> lhs, int shift) { return lhs >>= shift; }
-
-    friend constexpr ofable<T> operator+(ofable<T> lhs, T rhs) { return lhs += ofable<T>(rhs); }
-    friend constexpr ofable<T> operator-(ofable<T> lhs, T rhs) { return lhs -= ofable<T>(rhs); }
-    friend constexpr ofable<T> operator*(ofable<T> lhs, T rhs) { return lhs *= ofable<T>(rhs); }
-    friend constexpr ofable<T> operator/(ofable<T> lhs, T rhs) { return lhs /= ofable<T>(rhs); }
-    friend constexpr ofable<T> operator+(T lhs, const ofable<T>& rhs) { return ofable<T>(lhs) += rhs; }
-    friend constexpr ofable<T> operator-(T lhs, const ofable<T>& rhs) { return ofable<T>(lhs) -= rhs; }
-    friend constexpr ofable<T> operator*(T lhs, const ofable<T>& rhs) { return ofable<T>(lhs) *= rhs; }
-    friend constexpr ofable<T> operator/(T lhs, const ofable<T>& rhs) { return ofable<T>(lhs) /= rhs; }
-
-    friend constexpr bool operator==(const ofable<T>& lhs, const ofable<T>& rhs) {
-        return lhs.val == rhs.val && lhs.is_overflow == rhs.is_overflow;
+    template <typename C, typename V>
+    requires GodIterTarget<C> && BoundAny<C, V>
+    GodIter<C, V> lte(C& container, const V& value) {
+        GodIter<C, V> gi(container, upper_bound(container, value), true);
+        gi.forward();
+        return gi;
     }
-    friend constexpr bool operator!=(const ofable<T>& lhs, const ofable<T>& rhs) { return !(lhs == rhs); }
-    friend constexpr bool operator<(const ofable<T>& lhs, const ofable<T>& rhs) { return lhs.val < rhs.val; }
-    friend constexpr bool operator>(const ofable<T>& lhs, const ofable<T>& rhs) { return lhs.val > rhs.val; }
 
-    friend std::ostream& operator<<(std::ostream& os, const ofable<T>& v) {
-        if (v.is_overflow) os << "Overflow";
-        else os << v.val;
-        return os;
+    template <typename C, typename V>
+    requires GodIterTarget<C> && BoundAny<C, V>
+    GodIter<C, V> lt(C& container, const V& value) {
+        GodIter<C, V> gi(container, lower_bound(container, value), true);
+        gi.forward();
+        return gi;
     }
-};
+}
 
 template <typename T>
 concept Streamable = requires(std::ostream& os, T x) { os << x; };
@@ -449,7 +454,6 @@ template <typename T> struct is_acl_lazy_segtree : std::false_type {};
 template <class S, auto op, auto e, class F, auto m, auto c, auto id>
 struct is_acl_lazy_segtree<atcoder::lazy_segtree<S, op, e, F, m, c, id>> : std::true_type {};
 #endif
-
 
 struct DebugImpl {
     template <typename T>
@@ -783,10 +787,6 @@ public:
 //                         //
 // *-*-*-*-*-*-*-*-*-*-*-* //
 
-//#pragma GCC target("avx")
-//#pragma GCC optimize("O3")
-//#pragma GCC optimize("unroll-loops")
-
 void solve() {
 
 }
@@ -800,11 +800,11 @@ bool check() {
 }
 
 void next_case(CaseGenerator& cg) {
-    
+
 }
 
 void jikken() {
-
+    
 }
 
 signed main() {

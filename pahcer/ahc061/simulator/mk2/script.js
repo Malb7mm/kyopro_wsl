@@ -38,6 +38,22 @@ class Game {
         this.M = 4;
         this.U = 5;
         this.aiRandoms = [];
+        this.attackedCells = new Set(); // 攻撃されたセルを追跡
+        this.moveSuccessCells = new Set(); // 移動成功セルを追跡
+        this.moveFailureCells = new Set(); // 移動失敗セルを追跡
+        this.moveAttackSuccessCells = new Set(); // 攻撃成功（移動失敗）セルを追跡
+        this.defenseAttackCells = new Set(); // 防御攻撃（自分の領地が攻撃された）セルを追跡
+        this.showContributionRank = true; // 貢献度ランキング表示のオンオフ
+
+        // アルゴリズム予測用のパラメータと状態 (ハードコードされた定数)
+        this.algoParams = { wa: 0.65, wb: 0.85, wc: 0.3, wd: 0.1, epsilon: 0 };
+        this.showAlgoPrediction = true; // 初期状態は非表示
+        this.algoPredictionResult = null;
+
+        // 自動移動用の状態
+        this.autoMoveEnabled = false;
+        this.autoMoveIntervalId = null;
+
         this.init();
     }
 
@@ -58,6 +74,41 @@ class Game {
         this.updateVizDropdown();
         this.updateScores();
         this.render();
+
+        // 盤面作成後に自動的にエクスポートデータをテキストボックスに書き込む
+        this.autoExport();
+    }
+
+    autoExport() {
+        if (!this.grid || this.grid.length === 0) return;
+
+        const lines = [];
+        lines.push(`${N} ${this.M} ${MAX_TURN} ${this.U}`);
+
+        for(let r=0; r<N; r++) {
+            const rowVals = [];
+            for(let c=0; c<N; c++) rowVals.push(this.grid[r][c].value);
+            lines.push(rowVals.join(' '));
+        }
+
+        for(let i=0; i<this.M; i++) {
+            lines.push(`${this.players[i].r} ${this.players[i].c}`);
+        }
+
+        for(let i=1; i<this.M; i++) {
+            const p = this.players[i].trueParams;
+            lines.push(`${p.wa.toFixed(10)} ${p.wb.toFixed(10)} ${p.wc.toFixed(10)} ${p.wd.toFixed(10)} ${p.epsilon.toFixed(10)}`);
+        }
+
+        for(let t=0; t<MAX_TURN; t++) {
+            for(let i=0; i<this.M-1; i++) {
+                const rnd = this.aiRandoms[t][i];
+                lines.push(`${rnd.r1.toFixed(10)} ${rnd.r2.toFixed(10)}`);
+            }
+        }
+
+        const outputText = lines.join('\n');
+        document.getElementById('export-data').value = outputText;
     }
 
     resetState() {
@@ -70,6 +121,45 @@ class Game {
         document.getElementById('use-true-params').checked = false;
         document.getElementById('slider-container').classList.remove('disabled');
         document.getElementById('export-data').value = '';
+    }
+
+    toggleParamsDisplay() {
+        const paramsDisplay = document.getElementById('params-display');
+        const toggleBtn = document.getElementById('toggle-params-btn');
+
+        if (paramsDisplay.style.display === 'none') {
+            paramsDisplay.style.display = 'block';
+            toggleBtn.textContent = 'パラメータ非表示';
+            this.renderParams();
+        } else {
+            paramsDisplay.style.display = 'none';
+            toggleBtn.textContent = 'パラメータ表示';
+        }
+    }
+
+    renderParams() {
+        const paramsDisplay = document.getElementById('params-display');
+        let content = '';
+
+        for (let i = 1; i < this.M; i++) {
+            const player = this.players[i];
+            const total = player.trueParams.wa + player.trueParams.wb + player.trueParams.wc + player.trueParams.wd;
+
+            content += `
+            <div class="param-container">
+                <div class="param-header">P${i} (${PLAYER_NAMES[i]})</div>
+                <div class="param-bars">
+                    <div class="param-bar wa" style="width: ${(player.trueParams.wa / total * 100).toFixed(1)}%"></div>
+                    <div class="param-bar wb" style="width: ${(player.trueParams.wb / total * 100).toFixed(1)}%"></div>
+                    <div class="param-bar wc" style="width: ${(player.trueParams.wc / total * 100).toFixed(1)}%"></div>
+                    <div class="param-bar wd" style="width: ${(player.trueParams.wd / total * 100).toFixed(1)}%"></div>
+                </div>
+                <div class="param-epsilon">ε: ${(player.trueParams.epsilon * 100).toFixed(1)}%</div>
+            </div>
+            `;
+        }
+
+        paramsDisplay.innerHTML = content;
     }
 
     generateAIRandoms() {
@@ -123,6 +213,97 @@ class Game {
         if(isCheat) container.classList.add('disabled');
         else container.classList.remove('disabled');
         this.render();
+    }
+
+    toggleContributionRank() {
+        const isChecked = document.getElementById('show-contribution-rank').checked;
+        const board = document.getElementById('board');
+
+        if (isChecked) {
+            board.classList.add('show-contribution-rank');
+        } else {
+            board.classList.remove('show-contribution-rank');
+        }
+
+        this.render();
+    }
+
+    toggleAlgoPrediction() {
+        // チェックボックスの状態を直接反映
+        this.showAlgoPrediction = document.getElementById('show-algo-prediction').checked;
+        if (this.showAlgoPrediction) {
+            // 表示がオンになったら、ハードコードされたパラメータで再計算
+            this.calculateAlgoPrediction();
+        }
+        this.render();
+    }
+
+    toggleAutoMove() {
+        this.autoMoveEnabled = document.getElementById('auto-move').checked;
+
+        if (this.autoMoveEnabled) {
+            // 自動移動が有効になったら、すぐに一度実行し、その後インターバルで実行
+            this.performAutoMove();
+            this.autoMoveIntervalId = setInterval(() => {
+                if (this.autoMoveEnabled && !this.isGameOver) {
+                    this.performAutoMove();
+                } else {
+                    // 条件を満たさなくなったら停止
+                    this.stopAutoMove();
+                }
+            }, 400); // 0.4秒 = 400ms
+        } else {
+            // 自動移動が無効になったら、インターバルを停止
+            this.stopAutoMove();
+        }
+    }
+
+    stopAutoMove() {
+        if (this.autoMoveIntervalId) {
+            clearInterval(this.autoMoveIntervalId);
+            this.autoMoveIntervalId = null;
+        }
+        this.autoMoveEnabled = false;
+        // UIのチェックボックスの状態も同期
+        document.getElementById('auto-move').checked = false;
+    }
+
+    performAutoMove() {
+        // 現在のアルゴリズム予測結果を計算
+        this.calculateAlgoPrediction();
+
+        // 予測結果があれば、そのマスに移動
+        if (this.algoPredictionResult) {
+            const { r, c } = this.algoPredictionResult;
+            // handlePlayerClick は移動可能かどうかのチェックも行うため、安全
+            this.handlePlayerClick(r, c);
+        }
+        // 予測結果がnull（移動できない）場合は、何もしない
+    }
+
+    // アルゴリズム予測の計算
+    calculateAlgoPrediction() {
+        // P0 (ユーザー) の視点で計算
+        const playerId = 0;
+        const moves = this.getValidMoves(playerId);
+        if (moves.length === 0) {
+            this.algoPredictionResult = null;
+            return;
+        }
+
+        // 乱数は固定ではなく、計算用に0.5を使用 (貪欲行動の最善手)
+        // 本来のAIのように、εの確率でランダム行動も考慮
+        const r1 = Math.random(); // 実際の予測では毎回変わるが、UI表示では固定でも良さそう
+        const r2 = 0.5; // 貪欲時のタイブレーク用
+
+        if (r1 < this.algoParams.epsilon) {
+            // ランダム行動: 単に候補の中から選ぶ
+            const idx = Math.floor(r2 * moves.length);
+            this.algoPredictionResult = moves[idx];
+        } else {
+            // 貪欲行動: 最も評価値が高い場所
+            this.algoPredictionResult = this.getBestMove(playerId, moves, this.algoParams, r2);
+        }
     }
 
     // --- Import / Export ---
@@ -457,6 +638,15 @@ class Game {
     }
 
     processTurn(moves) {
+        // P0の駒が移動した場合、攻撃されたセルをリセット
+        if(moves.has(0)) {
+            this.attackedCells.clear();
+            this.moveSuccessCells.clear();
+            this.moveFailureCells.clear();
+            this.moveAttackSuccessCells.clear();
+            this.defenseAttackCells.clear();
+        }
+
         const destMap = new Map();
         for(let i=0; i<this.M; i++) {
             const m = moves.get(i);
@@ -488,12 +678,31 @@ class Game {
             } else if(cell.owner === i) {
                 if(cell.level < this.U) cell.level++;
             } else {
+                // P0の領地が攻撃された場合のみ記録（レベルの減少に関わらず）
+                if (cell.owner === 0) {
+                    this.attackedCells.add(`${m.r},${m.c}`);
+
+                    // レベルが0になって領地を奪われなかった場合のみdefenseAttackCellsに追加
+                    if(cell.level > 1) {
+                        this.defenseAttackCells.add(`${m.r},${m.c}`);
+                    }
+                }
+
+                // 攻撃された領地の情報をログに表示
+                const originalOwner = cell.owner;
+                this.log(`P${i}がP${originalOwner}の領地(${m.r},${m.c})を攻撃 (Lv${cell.level} → Lv${cell.level - 1})`);
+
                 cell.level--;
                 if(cell.level === 0) {
                     cell.owner = i; cell.level = 1;
                     this.log(`P${i}が(${m.r},${m.c})を奪取`);
                 } else {
                     repelled.add(i);
+
+                    // P0が攻撃して移動が失敗したがレベルを下げた場合
+                    if(i === 0) {
+                        this.moveAttackSuccessCells.add(`${m.r},${m.c}`);
+                    }
                 }
             }
         }
@@ -504,6 +713,20 @@ class Game {
                 this.grid[this.players[i].r][this.players[i].c].piece = -1;
                 this.players[i].r = m.r;
                 this.players[i].c = m.c;
+
+                // P0の移動結果を記録
+                if(i === 0) {
+                    if(repelled.has(i)) {
+                        this.moveFailureCells.add(`${m.r},${m.c}`);
+                    } else {
+                        this.moveSuccessCells.add(`${m.r},${m.c}`);
+                    }
+                }
+            } else {
+                // P0の移動が失敗した場合も記録
+                if(i === 0) {
+                    this.moveFailureCells.add(`${moves.get(i).r},${moves.get(i).c}`);
+                }
             }
         }
         for(let i=0; i<this.M; i++) {
@@ -513,10 +736,23 @@ class Game {
 
         this.turn++;
         this.updateScores();
+
+        // ターン終了時にアルゴリズム予測を再計算（表示がオンのときのみ）
+        if (this.showAlgoPrediction) {
+            this.calculateAlgoPrediction();
+        }
+
         this.render();
         if(this.turn > MAX_TURN) {
             this.isGameOver = true;
             this.log("ゲーム終了");
+
+            // ゲーム終了時に攻撃されたセルをリセット
+            this.attackedCells.clear();
+            this.moveSuccessCells.clear();
+            this.moveFailureCells.clear();
+            this.moveAttackSuccessCells.clear();
+            this.defenseAttackCells.clear();
         }
     }
 
@@ -604,10 +840,70 @@ class Game {
                     div.style.border = '1px solid #ced4da';
                 }
 
+                // 攻撃された領地を強調表示
+                if(this.attackedCells.has(`${r},${c}`)) {
+                    // 攻撃インジケーターを表示
+                    const indicator = div.querySelector('.attack-indicator');
+                    if(indicator) {
+                        indicator.classList.add('active');
+
+                        // アニメーションを一旦削除して再追加することで、アニメーションを再実行
+                        indicator.classList.remove('attacked-animation');
+                        void indicator.offsetWidth; // 強制リフロー
+                        indicator.classList.add('attacked-animation');
+                    }
+                }
+
+                // 各プレイヤーのスコア貢献度を計算
+                const contributionMaps = {};
+                for (let i = 0; i < this.M; i++) {
+                    contributionMaps[i] = [];
+                }
+
+                for (let r = 0; r < N; r++) {
+                    for (let c = 0; c < N; c++) {
+                        const cell = this.grid[r][c];
+                        if (cell.owner !== -1) {
+                            const contribution = cell.value * cell.level;
+                            contributionMaps[cell.owner].push({
+                                r,
+                                c,
+                                value: cell.value,
+                                level: cell.level,
+                                contribution
+                            });
+                        }
+                    }
+                }
+
+                // 各プレイヤーの貢献度を降順にソート
+                for (let i = 0; i < this.M; i++) {
+                    contributionMaps[i].sort((a, b) => b.contribution - a.contribution);
+                }
+
+                // 上位10位以内のマスに色を適用
+                const topContributions = {};
+                for (let i = 0; i < this.M; i++) {
+                    topContributions[i] = contributionMaps[i].slice(0, 10);
+                }
+
+                // 貢献度ランキングを取得
+                let contributionRank = -1;
+                let contributionClass = '';
+
+                if (cell.owner !== -1) {
+                    const playerTopContributions = topContributions[cell.owner];
+                    const rankIndex = playerTopContributions.findIndex(item => item.r === r && item.c === c);
+                    if (rankIndex !== -1) {
+                        contributionRank = rankIndex + 1;
+                        contributionClass = `contribution-${contributionRank}`;
+                    }
+                }
+
                 let innerHTML = `
                     <div class="cell-info">
-                        <span class="val">${cell.value}</span>
-                        <span class="lvl">Lv.${cell.level}</span>
+                        <span class="val ${contributionClass}">${cell.value}</span>
+                        <span class="lvl ${cell.level === 1 ? 'lv1' : (cell.level === this.U && this.U > 1 ? 'max-lv' : '')}">Lv.${cell.level}</span>
                     </div>
                 `;
 
@@ -632,7 +928,17 @@ class Game {
                     innerHTML += markersHtml;
                 }
 
+                // アルゴリズム予測アイコンの追加
+                if (this.showAlgoPrediction && this.algoPredictionResult && this.algoPredictionResult.r === r && this.algoPredictionResult.c === c) {
+                    innerHTML += `<div class="algo-prediction-marker">★</div>`;
+                }
+
                 div.innerHTML = innerHTML;
+
+                // 攻撃インジケーター要素を追加
+                const attackIndicator = document.createElement('div');
+                attackIndicator.className = 'attack-indicator';
+                div.appendChild(attackIndicator);
 
                 if(validMoveSet.has(`${r},${c}`)) {
                     div.classList.add('reachable');
@@ -647,17 +953,207 @@ class Game {
                     div.appendChild(p);
                 }
                 boardDiv.appendChild(div);
+
+                // 攻撃された領地を強調表示（攻撃インジケーター要素をboardDivの子として追加）
+                if(this.attackedCells.has(`${r},${c}`)) {
+                    const attackIndicator = document.createElement('div');
+                    attackIndicator.className = 'attack-indicator active';
+                    attackIndicator.style.position = 'absolute';
+
+                    // セル要素の実際の位置を取得して攻撃インジケーターを配置
+                    const cellRect = div.getBoundingClientRect();
+                    const boardRect = boardDiv.getBoundingClientRect();
+
+                    attackIndicator.style.top = `${cellRect.top - boardRect.top}px`;
+                    attackIndicator.style.left = `${cellRect.left - boardRect.left}px`;
+                    attackIndicator.style.width = `${cellRect.width}px`;
+                    attackIndicator.style.height = `${cellRect.height}px`;
+
+                    // アニメーションを適用
+                    attackIndicator.classList.add('indicator-animation');
+
+                    boardDiv.appendChild(attackIndicator);
+                }
+
+                // P0の移動成功を表示（移動成功インジケーター要素をboardDivの子として追加）
+                if(this.moveSuccessCells.has(`${r},${c}`)) {
+                    const successIndicator = document.createElement('div');
+                    successIndicator.className = 'move-success-indicator active';
+                    successIndicator.style.position = 'absolute';
+
+                    // セル要素の実際の位置を取得して移動成功インジケーターを配置
+                    const cellRect = div.getBoundingClientRect();
+                    const boardRect = boardDiv.getBoundingClientRect();
+
+                    successIndicator.style.top = `${cellRect.top - boardRect.top}px`;
+                    successIndicator.style.left = `${cellRect.left - boardRect.left}px`;
+                    successIndicator.style.width = `${cellRect.width}px`;
+                    successIndicator.style.height = `${cellRect.height}px`;
+
+                    // アニメーションを適用
+                    successIndicator.classList.add('move-success-indicator-animation');
+
+                    boardDiv.appendChild(successIndicator);
+                }
+
+                // P0の移動失敗を表示（移動失敗インジケーター要素をboardDivの子として追加）
+                if(this.moveFailureCells.has(`${r},${c}`)) {
+                    const failureIndicator = document.createElement('div');
+                    failureIndicator.className = 'move-failure-indicator active';
+                    failureIndicator.style.position = 'absolute';
+
+                    // セル要素の実際の位置を取得して移動失敗インジケーターを配置
+                    const cellRect = div.getBoundingClientRect();
+                    const boardRect = boardDiv.getBoundingClientRect();
+
+                    failureIndicator.style.top = `${cellRect.top - boardRect.top}px`;
+                    failureIndicator.style.left = `${cellRect.left - boardRect.left}px`;
+                    failureIndicator.style.width = `${cellRect.width}px`;
+                    failureIndicator.style.height = `${cellRect.height}px`;
+
+                    // アニメーションを適用
+                    failureIndicator.classList.add('move-failure-indicator-animation');
+
+                    boardDiv.appendChild(failureIndicator);
+                }
+
+                // P0が攻撃してレベルを下げた（移動失敗）を表示（攻撃成功インジケーター要素をboardDivの子として追加）
+                if(this.moveAttackSuccessCells.has(`${r},${c}`)) {
+                    const attackSuccessIndicator = document.createElement('div');
+                    attackSuccessIndicator.className = 'move-attack-success-indicator active';
+                    attackSuccessIndicator.style.position = 'absolute';
+
+                    // セル要素の実際の位置を取得して攻撃成功インジケーターを配置
+                    const cellRect = div.getBoundingClientRect();
+                    const boardRect = boardDiv.getBoundingClientRect();
+
+                    attackSuccessIndicator.style.top = `${cellRect.top - boardRect.top}px`;
+                    attackSuccessIndicator.style.left = `${cellRect.left - boardRect.left}px`;
+                    attackSuccessIndicator.style.width = `${cellRect.width}px`;
+                    attackSuccessIndicator.style.height = `${cellRect.height}px`;
+
+                    // アニメーションを適用
+                    attackSuccessIndicator.classList.add('move-attack-success-indicator-animation');
+
+                    boardDiv.appendChild(attackSuccessIndicator);
+                }
+
+                // 自分の領地が攻撃されたことを表示（防御攻撃インジケーター要素をboardDivの子として追加）
+                if(this.defenseAttackCells.has(`${r},${c}`)) {
+                    const defenseAttackIndicator = document.createElement('div');
+                    defenseAttackIndicator.className = 'defense-attack-indicator active';
+                    defenseAttackIndicator.style.position = 'absolute';
+
+                    // セル要素の実際の位置を取得して防御攻撃インジケーターを配置
+                    const cellRect = div.getBoundingClientRect();
+                    const boardRect = boardDiv.getBoundingClientRect();
+
+                    defenseAttackIndicator.style.top = `${cellRect.top - boardRect.top}px`;
+                    defenseAttackIndicator.style.left = `${cellRect.left - boardRect.left}px`;
+                    defenseAttackIndicator.style.width = `${cellRect.width}px`;
+                    defenseAttackIndicator.style.height = `${cellRect.height}px`;
+
+                    // アニメーションを適用
+                    defenseAttackIndicator.classList.add('defense-attack-indicator-animation');
+
+                    boardDiv.appendChild(defenseAttackIndicator);
+                }
             }
         }
 
-        document.getElementById('turn-display').innerText = `${Math.min(this.turn, MAX_TURN)} / ${MAX_TURN}`;
-        const scoresDiv = document.getElementById('scores');
-        scoresDiv.innerHTML = this.players.map(p => `
-            <div class="stat-row">
-                <span style="color:${PLAYER_COLORS[p.id]}"><b>${PLAYER_NAMES[p.id]}</b></span>
-                <b>${p.score}</b>
+        // 各プレイヤーのスコア貢献度を計算
+        const contributionMaps = {};
+        for (let i = 0; i < this.M; i++) {
+            contributionMaps[i] = [];
+        }
+
+        for (let r = 0; r < N; r++) {
+            for (let c = 0; c < N; c++) {
+                const cell = this.grid[r][c];
+                if (cell.owner !== -1) {
+                    const contribution = cell.value * cell.level;
+                    contributionMaps[cell.owner].push({
+                        r,
+                        c,
+                        value: cell.value,
+                        level: cell.level,
+                        contribution
+                    });
+                }
+            }
+        }
+
+        // 各プレイヤーの貢献度を降順にソート
+        for (let i = 0; i < this.M; i++) {
+            contributionMaps[i].sort((a, b) => b.contribution - a.contribution);
+        }
+
+        // 上位10位以内のマスに色を適用
+        const topContributions = {};
+        for (let i = 0; i < this.M; i++) {
+            topContributions[i] = contributionMaps[i].slice(0, 10);
+        }
+
+        document.getElementById('turn-value').innerText = `${Math.min(this.turn, MAX_TURN)} / ${MAX_TURN}`;
+
+        // 経過ターン数のゲージを表示
+        const turnGaugeDiv = document.getElementById('turn-gauge');
+        const turnPercentage = (this.turn / MAX_TURN) * 100;
+        turnGaugeDiv.innerHTML = `
+            <div style="display:flex; align-items:center; margin-bottom:2px;">
+                <span style="width:100px; font-size:10px;">Turn Progress</span>
+                <div style="flex-grow:1; height:5px; background-color:#e9ecef; border-radius:2px; margin-left:5px;">
+                    <div style="width:${Math.min(turnPercentage, 100)}%; height:100%; background-color:#3498db; border-radius:2px;"></div>
+                </div>
             </div>
-        `).join('');
+        `;
+
+        // スコアの順位を計算
+        const sortedPlayers = [...this.players].sort((a, b) => b.score - a.score);
+        const scoreRanks = {};
+        sortedPlayers.forEach((player, index) => {
+            if (index === 0) scoreRanks[player.id] = 1;
+            else if (sortedPlayers[index - 1].score !== player.score) {
+                scoreRanks[player.id] = index + 1;
+            } else {
+                scoreRanks[player.id] = scoreRanks[sortedPlayers[index - 1].id];
+            }
+        });
+
+        // 最大スコアを計算して、棒グラフの長さを決定
+        const maxScore = Math.max(...this.players.map(p => p.score));
+
+        const scoresDiv = document.getElementById('scores');
+        scoresDiv.innerHTML = this.players.map(p => {
+            let scoreClass = ""; // デフォルトのクラス
+            if (scoreRanks[p.id] === 1) scoreClass = "score-first"; // 金
+            else if (scoreRanks[p.id] === 2) scoreClass = "score-second"; // 銀
+            else if (scoreRanks[p.id] === 3) scoreClass = "score-third"; // 銅
+
+            // 棒グラフの長さを計算（最大100px）
+            const barWidth = maxScore > 0 ? (p.score / maxScore) * 100 : 0;
+
+            return `
+                <div class="player-score" style="display:flex; flex-direction:column; align-items:center; margin:0 5px;">
+                    <span style="color:${PLAYER_COLORS[p.id]}"><b>${PLAYER_NAMES[p.id]}</b></span>
+                    <b class="${scoreClass}">${p.score}</b>
+                </div>
+            `;
+        }).join('');
+
+        // 棒グラフを表示
+        const barsDiv = document.getElementById('score-bars');
+        barsDiv.innerHTML = this.players.map(p => {
+            const barWidth = maxScore > 0 ? (p.score / maxScore) * 100 : 0;
+            return `
+                <div style="display:flex; align-items:center; margin-bottom:2px;">
+                    <span style="color:${PLAYER_COLORS[p.id]}; width:100px; font-size:10px;">${PLAYER_NAMES[p.id]}</span>
+                    <div style="flex-grow:1; height:5px; background-color:#e9ecef; border-radius:2px; margin-left:5px;">
+                        <div style="width:${barWidth}%; height:100%; background-color:${PLAYER_COLORS[p.id]}; border-radius:2px;"></div>
+                    </div>
+                </div>
+            `;
+        }).join('');
     }
 }
 

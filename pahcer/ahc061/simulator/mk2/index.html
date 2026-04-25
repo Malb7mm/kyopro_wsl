@@ -24,9 +24,9 @@
             <div class="control-group">
                 <label>プレイヤー数 (M)</label>
                 <select id="input-m">
-                    <option value="4" selected>4人</option>
                     <option value="2">2人</option>
                     <option value="3">3人</option>
+                    <option value="4" selected>4人</option>
                     <option value="5">5人</option>
                     <option value="6">6人</option>
                     <option value="7">7人</option>
@@ -36,11 +36,11 @@
             <div class="control-group">
                 <label>レベル上限 (U)</label>
                 <select id="input-u">
-                    <option value="5" selected>Lv.5</option>
                     <option value="1">Lv.1</option>
                     <option value="2">Lv.2</option>
                     <option value="3">Lv.3</option>
                     <option value="4">Lv.4</option>
+                    <option value="5" selected>Lv.5</option>
                 </select>
             </div>
             <button class="action-btn" onclick="game.reset()">設定でリセット (New Game)</button>
@@ -59,12 +59,22 @@
             <div class="control-group">
                 <textarea id="export-data" placeholder="ここに完全な入力データが出力されます" readonly></textarea>
             </div>
-            <button class="secondary action-btn" onclick="game.exportInput()">現在の設定を出力</button>
         </div>
     </div>
 
     <div>
         <div id="board"></div>
+        <div id="status-panel" style="display:flex; flex-direction:column; margin-top:10px; padding:10px; background:#f8f9fa; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+            <div style="display:flex; justify-content:space-around; margin-bottom:5px;">
+                <div id="turn-display" style="display:flex; flex-direction:column; align-items:center; margin-right:10px;">
+                    <span>Turn:</span>
+                    <span id="turn-value">0 / 100</span>
+                </div>
+                <div id="scores" style="display:flex; flex-direction:row;"></div>
+            </div>
+            <div id="turn-gauge" style="width:100%; margin-bottom:5px;"></div>
+            <div id="score-bars" style="width:100%;"></div>
+        </div>
     </div>
 
     <div style="width: 280px; display:flex; flex-direction:column; gap:10px;">
@@ -88,6 +98,15 @@
                 </label>
                 <label style="cursor:pointer;">
                     <input type="checkbox" id="use-true-params" onchange="game.toggleTrueParams()"> 正解パラメータを使用 (Cheat)
+                </label>
+                <label style="cursor:pointer;">
+                    <input type="checkbox" id="show-contribution-rank" onchange="game.toggleContributionRank()"> 貢献度ランキング表示 (Show Contribution Rank)
+                </label>
+                <label style="cursor:pointer;">
+                    <input type="checkbox" id="show-algo-prediction" onchange="game.toggleAlgoPrediction()"> アルゴリズム予測を表示 (Show Algorithm Prediction)
+                </label>
+                <label style="cursor:pointer;">
+                    <input type="checkbox" id="auto-move" onchange="game.toggleAutoMove()"> 自動移動 (Auto Move)
                 </label>
             </div>
 
@@ -118,12 +137,18 @@
         </div>
 
         <div id="info-panel" class="panel">
-            <h3>ステータス</h3>
-            <div class="stat-row"><span>Turn:</span> <span id="turn-display">0 / 100</span></div>
-            <div id="scores" style="margin-top:10px;"></div>
-            <div class="abs-score-box">
-                絶対スコア: <span id="abs-score" style="font-size:18px;">0</span>
+            <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                <h3>ステータス</h3>
+                <div class="abs-score-box" style="height:fit-content;">
+                    絶対スコア: <span id="abs-score" style="font-size:18px;">0</span>
+                </div>
             </div>
+            <div class="stat-row">
+                <button id="toggle-params-btn" onclick="game.toggleParamsDisplay()">パラメータ表示</button>
+            </div>
+            <div id="params-display" style="display:none; margin-top:10px;"></div>
+
+
             <div id="log"></div>
         </div>
     </div>
