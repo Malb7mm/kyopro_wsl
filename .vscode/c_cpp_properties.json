@@ -4,7 +4,7 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/**",
-                "${wsl:HOME}/kyopro/lib/acl"
+                "/home/malb7mm/kyopro/lib/acl"
             ],
             "defines": ["LOCAL","ATCODER"],
             "compilerPath": "/usr/bin/gcc",

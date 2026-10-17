@@ -1,4 +1,4 @@
-// solve() is around line 660
+// https://github.com/Malb7mm/kyopro_wsl
 
 //for library checker/yukicoder
 //#define ATCODER 1
@@ -255,8 +255,8 @@ inline bool isnset_any(T &val, Args&&... bits) {
     return (... || !(bool)(val & (1LL<<bits)));
 }
 
-template <typename F>
-inline long long nibutan(long long ok, long long ng, F f) {
+template <typename F, typename T>
+inline T nibutan(T ok, T ng, F f) {
     while (std::abs(ok - ng) > 1) {
         auto mid = std::min(ok, ng) + std::abs(ok - ng) / 2;
         if (f(mid)) ok = mid;
@@ -787,7 +787,79 @@ public:
 //                         //
 // *-*-*-*-*-*-*-*-*-*-*-* //
 
+//ややこしいので読み替えて、S_iがoのとき正解、xのとき不正解にする
+//通過者が出る方を勝ち抜け回、そうでない方を脱落回とよぶ
+//Sijが変わると問題j以降の正解数が変わる
+//正解数が変わると勝ち抜け回/脱落回が変わる
+//どこの回で勝ち抜け/脱落したかを各参加者ごとに覚えておけばいい？
+//O(QN)は厳しい気がするんですけど
+//O(QK)はできる
+//クエリあたりKlogNくらいでなんとかしろ、という問題？
+//Sijが変わったら、j以降の各問題xについて
+//xの正解数を更新する
+//→勝ち抜け/脱落が変わったらN人について更新なんてしてたらクエリあたりNになっちゃうだろ
+
+//もし変更クエリがないなら、o<xとして辞書順で並べれば、上からここまで通過、下からここまで脱落で管理できる？
+//ooooo
+//oooox
+//oooxo
+//oooxx
+//ooxoo
+//ooxox
+//ooxxo
+//oxooo
+//oxoox
+//xoooo
+
+//oooooxxx
+//oxoooooo
+//oxooxxxx
+//oxxxxxxx
+//できそうな気がする
+//よく考えればある問題でoとxが分かれた参加者2人は確実にoのほうが有利
+
+//じゃあbinary trie？
+//実際何人通過したのかがすぐ求められればいけそう
+//たぶんM人目の境界を跨いで全く同じ選び方をした人がいたときにそれが全部脱落者になるだけ
+
+//というか200bit整数をsetに入れられればそれでよさそう
+//計算量的にセーフかわかんないけど
+
+i128 set1_bit(i128 val, int bit) {
+    return val|=((i128)1<<bit);
+}
+i128 set0_bit(i128 val, int bit) {
+    return val&=~((i128)1<<bit);
+}
+i128 flip_bit(i128 val, int bit) {
+    return val^=((i128)1<<bit);
+}
+bool ispop_bit(i128 val, int bit) {
+    return val&((i128)1<<bit);
+}
+
 void solve() {
+    ll cin(n,m,k);
+    string cin(t);
+    vstr S(n);cin>>S;
+    ll cin(q);
+    indexed_set<tuple<i128,i128,int>> set;//前100問,後100問,index
+    unordered_map<int,__gnu_pbds::detail::bin_search_tree_const_it_>;
+    rep(j,n){
+        auto s=S[j];
+        i128 a1=0,a2=0;
+        rep(i,k){
+            if(s[i]==t[i]){
+                if(i<100){
+                    a1=set1_bit(a1,99-i);
+                }
+                else{
+                    a2=set1_bit(a2,199-i);
+                }
+            }
+        }
+        auto it=set.insert(make_tuple(a1,a2,j)).first;
+    }
 
 }
 
@@ -804,7 +876,7 @@ void next_case(CaseGenerator& cg) {
 }
 
 void jikken() {
-    
+
 }
 
 signed main() {
@@ -814,12 +886,3 @@ signed main() {
     cout << fixed << setprecision(15);
     stringstream dummy_cerr;if (LOCAL == 1 && CPHEXT == 0 && !SHOW_CERR) {cerr.rdbuf(dummy_cerr.rdbuf());}if (LOCAL == 0 || CPHEXT == 1 || MODE >= 0) { if (LOCAL == 0 || CPHEXT == 1 || MODE == 0) solve();else if (MODE == 1) naive();else if (MODE == 2) check();else if (MODE == 4) jikken();else if (MODE == 3) {stringstream ss;CaseGenerator cg(ss);next_case(cg);cout << ss.str() << endl;}}else {string discarded_input;auto cin_rdbuf = cin.rdbuf();auto cout_rdbuf = cout.rdbuf();istream std_in(cin_rdbuf);ostream std_out(cout_rdbuf);stringstream ss_in;stringstream ss_out;cin.rdbuf(ss_in.rdbuf());cout.rdbuf(ss_out.rdbuf());stringstream ss_gen;CaseGenerator cg(ss_gen);auto clear_ss = [&](stringstream& ss){ss.str("");ss.clear(std::stringstream::goodbit);};auto read_ss = [&](stringstream& ss){auto result = ss.str();clear_ss(ss);return result;};auto generate = [&]{next_case(cg);ss_gen << endl;return read_ss(ss_gen);};std_out << "- Example of Generated Case:" << endl;std_out << generate() << endl;stringstream ans_solve_ss;string ans_solve;int i_target = 1;for (int i = 1;; i++) {auto testcase = generate();if (SHOW_EVERY_TESTCASES) {std_out << "- Case " << i << ":" << endl;std_out << testcase << endl;}ss_in << testcase;solve();ans_solve_ss << read_ss(ss_out);ans_solve = ans_solve_ss.str();clear_ss(ss_in);if (MODE == -1){stringstream ans_naive_ss;string ans_naive;ss_in << testcase;naive();ans_naive_ss << read_ss(ss_out);ans_naive = ans_naive_ss.str();clear_ss(ss_in);bool pass;while (true) {string s_solve, s_naive;ans_solve_ss >> s_solve;ans_naive_ss >> s_naive;if (s_solve != s_naive) {pass = false;break;}if (ans_solve_ss.eof() && ans_naive_ss.eof()) {pass = true;break;}else if (ans_solve_ss.eof() || ans_naive_ss.eof()) {pass = false;break;}}clear_ss(ans_solve_ss);clear_ss(ans_naive_ss);if (!pass) {std_out << "! Counterexample has Found:" << endl;std_out << testcase << endl;std_out << "- Answer of solve():" << endl;std_out << ans_solve << endl;std_out << "- Answer of naive():" << endl;std_out << ans_naive << endl;std_in >> discarded_input;std_out << endl;i--;continue;}}else if (MODE == -2) {stringstream out_check_ss;string out_check;ss_in << testcase << endl;ss_in << ans_solve;auto pass = check();out_check_ss << read_ss(ss_out);out_check = out_check_ss.str();clear_ss(ss_in);clear_ss(ans_solve_ss);clear_ss(out_check_ss);if (!pass) {std_out << "! Counterexample has Found:" << endl;std_out << testcase << endl;std_out << "- Answer of solve():" << endl;std_out << ans_solve << endl;std_out << "- Output of check():" << endl;std_out << out_check << endl;std_in >> discarded_input;std_out << endl;i--;continue;}}if (i == i_target) {std_out << "- " << i << " Cases Passed" << endl << endl;i_target *= 2;}}}
 }
-
-// modの取り忘れがないか？
-// 998と10^9+7を間違えてないか？
-// 計算途中で値がオーバーフローしないか？
-// bit全探索で1<<60とかやってないか？(1LL<<60)
-// 入力制約がllの範囲でオーバーフローしていないか？
-// 入力の型を間違えていないか？(ll cin(s)とか)
-// 定数倍 map→unordered_map→vector
-// 参照絡みで事故ってないか？
